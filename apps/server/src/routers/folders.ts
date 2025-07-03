@@ -73,3 +73,32 @@ foldersRouter.delete("/:folderId", async (c) => {
   await db.delete(folder).where(eq(folder.id, folderId));
   return c.json({ success: true });
 });
+
+// Update folder (e.g., toggle sharing, rename, icon change)
+foldersRouter.patch("/:folderId", async (c) => {
+  const { folderId } = c.req.param();
+  const values = await c.req.json<
+    Partial<{
+      name: string;
+      icon: string;
+      allowDuplicate: boolean;
+      isShared: boolean;
+    }>
+  >();
+
+  if (!folderId) {
+    return c.json({ message: "folderId is required" }, 400);
+  }
+
+  if (Object.keys(values).length === 0) {
+    return c.json({ message: "No values to update" }, 400);
+  }
+
+  const [updated] = await db
+    .update(folder)
+    .set(values)
+    .where(eq(folder.id, folderId))
+    .returning();
+
+  return c.json(updated);
+});

@@ -17,6 +17,7 @@ import {
   isNewFolderModalOpenAtom,
   isOpenAtom,
   folderDropdownOpenAtom,
+  openHeaderPopoverAtom,
 } from "./helpers/atoms";
 
 export const Header = ({
@@ -40,6 +41,10 @@ export const Header = ({
 
   const [folderDropdownOpen, setFolderDropdownOpen] = useAtom(
     folderDropdownOpenAtom
+  );
+
+  const [openHeaderPopover, setOpenHeaderPopover] = useAtom(
+    openHeaderPopoverAtom
   );
 
   useHotkeys(
@@ -94,6 +99,14 @@ export const Header = ({
     },
     { enableOnFormTags: false },
     [folders, currentFolder]
+  );
+
+  useHotkeys(
+    "s",
+    () => {
+      setOpenHeaderPopover((prev) => (prev === "share" ? null : "share"));
+    },
+    { enableOnFormTags: false }
   );
 
   return (
