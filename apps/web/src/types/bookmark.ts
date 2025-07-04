@@ -7,4 +7,6 @@ export interface Bookmark {
   ogImageUrl: string | null;
   loading?: boolean;
   onClick?: () => void;
+  isPinned?: boolean;
+  tags?: { name: string; color: string }[];
 }

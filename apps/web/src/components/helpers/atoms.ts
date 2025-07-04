@@ -1,4 +1,5 @@
 import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 
 type SmallBookmark = {
   id: string;
@@ -22,10 +23,13 @@ type FolderWithCount = {
 };
 
 export const isOpenAtom = atom(false);
-export const showMonthsAtom = atom(true);
+export const showMonthsAtom = atomWithStorage("showMonths", true);
 export const isNewFolderModalOpenAtom = atom<boolean>(false);
 export const isDeleteFolderModalOpenAtom = atom<boolean>(false);
-export const viewStyleAtom = atom<"expanded" | "compact">("compact");
+export const viewStyleAtom = atomWithStorage<"expanded" | "compact">(
+  "viewStyle",
+  "compact"
+);
 export const currentPageAtom = atom(1);
 export const currentFolderAtom = atom<FolderWithCount | null>(null);
 export const foldersAtom = atom<FolderWithCount[] | null>(null);

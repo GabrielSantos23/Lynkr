@@ -20,6 +20,8 @@ import Loader from "../loader";
 import { Separator } from "../ui/separator";
 import CreateFolder from "./CreateFolder";
 import DeleteFolder from "./DeleteFolder";
+import { authClient } from "@/lib/auth-client";
+import { getFaviconForFolder } from "@/lib/utils";
 
 type Folder = {
   id: string;
@@ -31,20 +33,6 @@ type Folder = {
   _count?: {
     bookmarks: number;
   };
-};
-
-// This async function handles the API request to get all folders
-const getFoldersFn = async (): Promise<Folder[]> => {
-  const response = await fetch("/api/folders");
-  if (!response.ok) {
-    throw new Error("Failed to fetch folders.");
-  }
-  const raw = await response.json();
-  // Ensure createdAt is a Date instance to satisfy Folder type
-  return raw.map((f: any) => ({
-    ...f,
-    createdAt: new Date(f.createdAt),
-  })) as Folder[];
 };
 
 export const FolderDropdown = () => {
@@ -60,36 +48,136 @@ export const FolderDropdown = () => {
   const [isDeleteFolderModalOpen, setIsDeleteFolderModalOpen] = useAtom(
     isDeleteFolderModalOpenAtom
   );
+  const { data: session } = authClient.useSession();
+
+  // This async function handles the API request to get all folders
+  const getFoldersFn = async (): Promise<Folder[]> => {
+    if (!session?.user?.id) {
+      return [];
+    }
+
+    const userId = session.user.id;
+    const response = await fetch(`/api/folders?userId=${userId}`);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch folders.");
+    }
+
+    const raw = await response.json();
+    // Ensure createdAt is a Date instance to satisfy Folder type
+    return raw.map((f: any) => ({
+      ...f,
+      createdAt: new Date(f.createdAt),
+    })) as Folder[];
+  };
+
   const {
     data: fetchedFolders,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["folders"],
+    queryKey: ["folders", session?.user?.id],
     queryFn: getFoldersFn,
+    enabled: !!session?.user?.id,
   });
 
   // Sync TanStack Query data with Jotai atoms
   useEffect(() => {
     if (fetchedFolders) {
+      console.log("Fetched folders:", fetchedFolders);
+
       // 1. Update global folders list
       setFolders(fetchedFolders);
 
-      // 2. If no folder is selected OR the selected folder no longer exists, pick the first
+      // 2. If no folder is selected OR the selected folder no longer exists, pick the first or load from localStorage
       if (fetchedFolders.length > 0) {
+        // Check if we have a saved folder ID in localStorage
+        const savedFolderId = localStorage.getItem("currentFolderId");
+        console.log("Saved folder ID from localStorage:", savedFolderId);
+
+        // Try to find the saved folder in the fetched folders
+        const savedFolder = savedFolderId
+          ? fetchedFolders.find((f) => f.id === savedFolderId)
+          : null;
+
+        console.log("Found saved folder:", savedFolder);
+
         const currentExists = currentFolder
           ? fetchedFolders.some((f) => f.id === currentFolder.id)
           : false;
 
+        console.log(
+          "Current folder exists:",
+          currentExists,
+          "Current folder:",
+          currentFolder
+        );
+
         if (!currentExists) {
-          setCurrentFolder(fetchedFolders[0]);
+          // If we have a saved folder and it exists in the fetched folders, use it
+          if (savedFolder) {
+            console.log("Setting current folder to saved folder:", savedFolder);
+            setCurrentFolder(savedFolder);
+
+            // Update document title and favicon immediately
+            document.title = savedFolder.name;
+            const faviconUrl = getFaviconForFolder(savedFolder);
+            const linkElement = document.querySelector('link[rel="icon"]');
+            if (linkElement) {
+              linkElement.setAttribute("href", faviconUrl);
+            }
+          } else {
+            // Otherwise, use the first folder
+            console.log(
+              "Setting current folder to first folder:",
+              fetchedFolders[0]
+            );
+            setCurrentFolder(fetchedFolders[0]);
+            localStorage.setItem("currentFolderId", fetchedFolders[0].id);
+
+            // Update document title and favicon immediately
+            document.title = fetchedFolders[0].name;
+            const faviconUrl = getFaviconForFolder(fetchedFolders[0]);
+            const linkElement = document.querySelector('link[rel="icon"]');
+            if (linkElement) {
+              linkElement.setAttribute("href", faviconUrl);
+            }
+          }
         }
       } else {
         // No folders at all – make sure state stays clean
+        console.log("No folders available, clearing current folder");
         setCurrentFolder(null);
+        localStorage.removeItem("currentFolderId");
       }
     }
   }, [fetchedFolders, currentFolder, setFolders, setCurrentFolder]);
+
+  // NEW EFFECT: Persist the currently selected folder to localStorage and update
+  // document title & favicon whenever `currentFolder` changes. This guarantees
+  // that the last opened folder is remembered across sessions.
+  useEffect(() => {
+    if (currentFolder) {
+      // Save the currently open folder ID
+      localStorage.setItem("currentFolderId", currentFolder.id);
+
+      // Update document title and favicon for immediate feedback
+      document.title = currentFolder.name;
+      const faviconUrl = getFaviconForFolder(currentFolder);
+      const linkElement = document.querySelector('link[rel="icon"]');
+      if (linkElement) {
+        linkElement.setAttribute("href", faviconUrl);
+      }
+    } else {
+      // If no folder is selected, clean up the storage and revert UI elements
+      localStorage.removeItem("currentFolderId");
+      document.title = "Bookmarks";
+      const linkElement = document.querySelector('link[rel="icon"]');
+      if (linkElement) {
+        linkElement.setAttribute("href", "/logo.ico");
+      }
+    }
+  }, [currentFolder]);
 
   // Handle loading and error states
   if (isLoading) {
@@ -109,9 +197,9 @@ export const FolderDropdown = () => {
   }
 
   // If there are no folders, don't render the dropdown
-  if (!folders || folders.length === 0) {
-    return null;
-  }
+  // if (!folders || folders.length === 0) {
+  //   return null;
+  // }
 
   return (
     <>
@@ -120,14 +208,46 @@ export const FolderDropdown = () => {
         open={selectOpen}
         onOpenChange={setSelectOpen}
         onValueChange={(value) => {
+          console.log("Folder selected with value:", value);
           const folder = folders?.find((folder) => folder.id === value);
+          console.log("Found folder:", folder);
 
           if (folder?.id !== currentFolder?.id) {
+            console.log(
+              "Changing current folder from",
+              currentFolder,
+              "to",
+              folder
+            );
             setIsOpen(false);
             setBookmarks(null);
             setCurrentPage(1);
             setSelectOpen(false);
             setCurrentFolder(folder ?? null);
+
+            // Save current folder ID to localStorage for persistence
+            if (folder) {
+              console.log("Saving folder ID to localStorage:", folder.id);
+              localStorage.setItem("currentFolderId", folder.id);
+
+              // Directly update document title and favicon for immediate feedback
+              document.title = folder.name;
+              const faviconUrl = getFaviconForFolder(folder);
+              const linkElement = document.querySelector('link[rel="icon"]');
+              if (linkElement) {
+                linkElement.setAttribute("href", faviconUrl);
+              }
+            } else {
+              console.log("Removing folder ID from localStorage");
+              localStorage.removeItem("currentFolderId");
+              document.title = "Bookmarks";
+              const linkElement = document.querySelector('link[rel="icon"]');
+              if (linkElement) {
+                linkElement.setAttribute("href", "/logo.ico");
+              }
+            }
+          } else {
+            console.log("Selected the same folder, not changing");
           }
         }}
       >

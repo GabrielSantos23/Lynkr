@@ -75,7 +75,7 @@ export const ShareDropdown = () => {
 
   // This is a placeholder for the share link logic
   const shareUrl = currentFolder
-    ? `${window.location.origin}/folder/${currentFolder.id}`
+    ? `${window.location.origin}/bookmarks/public/${currentFolder.id}`
     : window.location.href;
 
   const handleShare = (value: string) => {

@@ -41,16 +41,12 @@ export default function UserMenu() {
           <Button
             variant="destructive"
             className="w-full"
-            onClick={() => {
-              authClient.signOut({
-                fetchOptions: {
-                  onSuccess: () => {
-                    navigate({
-                      to: "/",
-                    });
-                  },
-                },
-              });
+            onClick={async () => {
+              try {
+                await authClient.signOut();
+              } finally {
+                navigate({ to: "/" });
+              }
             }}
           >
             Sign Out

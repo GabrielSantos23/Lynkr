@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import React from "react";
+import type { RefObject } from "react";
 
 import { useAtom } from "jotai";
 import { useHotkeys } from "react-hotkeys-hook";
@@ -19,18 +20,19 @@ import {
   folderDropdownOpenAtom,
   openHeaderPopoverAtom,
 } from "./helpers/atoms";
+import { authClient } from "@/lib/auth-client";
+import { getFaviconForFolder } from "@/lib/utils";
 
-export const Header = ({
-  inputRef,
-}: {
-  inputRef: React.RefObject<HTMLInputElement>;
-}) => {
+// Update the type to be more flexible
+type InputRefType = RefObject<HTMLInputElement | null>;
+
+export const Header = ({ inputRef }: { inputRef: InputRefType }) => {
   const [folders] = useAtom(foldersAtom);
   const [, setIsOpen] = useAtom(isOpenAtom);
   const [, setBookmarks] = useAtom(bookmarksAtom);
   const [currentFolder, setCurrentFolder] = useAtom(currentFolderAtom);
   const [, setCurrentPage] = useAtom(currentPageAtom);
-
+  const { data: session } = authClient.useSession();
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useAtom(
     isNewFolderModalOpenAtom
   );
@@ -94,6 +96,14 @@ export const Header = ({
           setFolderDropdownOpen(false);
           setCurrentFolder(folder);
           localStorage.setItem("currentFolderId", folder.id);
+
+          // Directly update document title and favicon for immediate feedback
+          document.title = folder.name;
+          const faviconUrl = getFaviconForFolder(folder);
+          const linkElement = document.querySelector('link[rel="icon"]');
+          if (linkElement) {
+            linkElement.setAttribute("href", faviconUrl);
+          }
         }
       }
     },
@@ -114,7 +124,9 @@ export const Header = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex w-full flex-row items-center justify-between px-8 py-6 md:px-12"
+      className={`flex w-full ${
+        session?.user ? "" : "hidden"
+      } flex-row items-center justify-between px-8 py-6 md:px-12`}
     >
       <FolderDropdown />
       <div className="flex flex-row gap-2">

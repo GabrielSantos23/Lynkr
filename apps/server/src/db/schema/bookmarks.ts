@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  jsonb,
+  index,
+} from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { sql } from "drizzle-orm";
 
@@ -29,6 +36,10 @@ export const bookmark = pgTable(
     folderId: text("folder_id")
       .notNull()
       .references(() => folder.id, { onDelete: "cascade" }),
+    isPinned: boolean("is_pinned").notNull().default(false),
+    tags: jsonb("tags")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
   },
   (t) => [
     index("bookmark_folder_created_at_idx").on(t.folderId, t.createdAt),

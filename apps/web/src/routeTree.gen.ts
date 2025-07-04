@@ -10,18 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BookmarksRouteImport } from './routes/bookmarks'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BookmarksPublicIdRouteImport } from './routes/bookmarks.public.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookmarksRoute = BookmarksRouteImport.update({
@@ -34,38 +29,42 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookmarksPublicIdRoute = BookmarksPublicIdRouteImport.update({
+  id: '/public/$id',
+  path: '/public/$id',
+  getParentRoute: () => BookmarksRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/bookmarks': typeof BookmarksRoute
-  '/dashboard': typeof DashboardRoute
+  '/bookmarks': typeof BookmarksRouteWithChildren
   '/login': typeof LoginRoute
+  '/bookmarks/public/$id': typeof BookmarksPublicIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/bookmarks': typeof BookmarksRoute
-  '/dashboard': typeof DashboardRoute
+  '/bookmarks': typeof BookmarksRouteWithChildren
   '/login': typeof LoginRoute
+  '/bookmarks/public/$id': typeof BookmarksPublicIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/bookmarks': typeof BookmarksRoute
-  '/dashboard': typeof DashboardRoute
+  '/bookmarks': typeof BookmarksRouteWithChildren
   '/login': typeof LoginRoute
+  '/bookmarks/public/$id': typeof BookmarksPublicIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bookmarks' | '/dashboard' | '/login'
+  fullPaths: '/' | '/bookmarks' | '/login' | '/bookmarks/public/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bookmarks' | '/dashboard' | '/login'
-  id: '__root__' | '/' | '/bookmarks' | '/dashboard' | '/login'
+  to: '/' | '/bookmarks' | '/login' | '/bookmarks/public/$id'
+  id: '__root__' | '/' | '/bookmarks' | '/login' | '/bookmarks/public/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BookmarksRoute: typeof BookmarksRoute
-  DashboardRoute: typeof DashboardRoute
+  BookmarksRoute: typeof BookmarksRouteWithChildren
   LoginRoute: typeof LoginRoute
 }
 
@@ -76,13 +75,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bookmarks': {
@@ -99,13 +91,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bookmarks/public/$id': {
+      id: '/bookmarks/public/$id'
+      path: '/public/$id'
+      fullPath: '/bookmarks/public/$id'
+      preLoaderRoute: typeof BookmarksPublicIdRouteImport
+      parentRoute: typeof BookmarksRoute
+    }
   }
 }
 
+interface BookmarksRouteChildren {
+  BookmarksPublicIdRoute: typeof BookmarksPublicIdRoute
+}
+
+const BookmarksRouteChildren: BookmarksRouteChildren = {
+  BookmarksPublicIdRoute: BookmarksPublicIdRoute,
+}
+
+const BookmarksRouteWithChildren = BookmarksRoute._addFileChildren(
+  BookmarksRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BookmarksRoute: BookmarksRoute,
-  DashboardRoute: DashboardRoute,
+  BookmarksRoute: BookmarksRouteWithChildren,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport

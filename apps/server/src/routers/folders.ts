@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db";
-import { folder } from "../db/schema/bookmarks";
-import { eq } from "drizzle-orm";
+import { folder, bookmark } from "../db/schema/bookmarks";
+import { eq, ilike, and, desc, sql, or } from "drizzle-orm";
 
 export const foldersRouter = new Hono();
 
@@ -52,14 +52,34 @@ foldersRouter.get("/:userId", async (c) => {
 
 // Add route to list folders (optionally filtered by userId)
 foldersRouter.get("/", async (c) => {
-  const { userId } = c.req.query();
+  const { userId, folderId } = c.req.query();
 
-  // If a userId query parameter is provided, filter by it. Otherwise, return all folders.
-  const result = userId
-    ? await db.select().from(folder).where(eq(folder.userId, userId))
-    : await db.select().from(folder);
+  // Build base query selecting folder columns + bookmarks count
+  const foldersWithCountsQuery = db
+    .select({
+      folder: folder, // all columns via nested object
+      bookmarksCount: sql<number>`COUNT(${bookmark.id})::int`,
+    })
+    .from(folder)
+    .leftJoin(bookmark, eq(bookmark.folderId, folder.id))
+    .groupBy(folder.id);
 
-  return c.json(result);
+  let result;
+  if (folderId) {
+    result = await foldersWithCountsQuery.where(eq(folder.id, folderId));
+  } else if (userId) {
+    result = await foldersWithCountsQuery.where(eq(folder.userId, userId));
+  } else {
+    result = await foldersWithCountsQuery;
+  }
+
+  // Flatten response: merge folder fields + _count.bookmarks
+  const mapped = result.map((row: any) => ({
+    ...row.folder,
+    _count: { bookmarks: Number(row.bookmarksCount) },
+  }));
+
+  return c.json(mapped);
 });
 
 // Delete folder by id
@@ -101,4 +121,90 @@ foldersRouter.patch("/:folderId", async (c) => {
     .returning();
 
   return c.json(updated);
+});
+
+// List bookmarks for a folder with pagination & search
+foldersRouter.get("/:folderId/bookmarks", async (c) => {
+  const { folderId } = c.req.param();
+  const { page = "1", search = "" } = c.req.query();
+  const pageNumber = parseInt(page as string, 10) || 1;
+  const PAGE_SIZE = 20;
+
+  const offset = (pageNumber - 1) * PAGE_SIZE;
+
+  const searchTerm = (search as string).startsWith("#")
+    ? (search as string).slice(1)
+    : (search as string);
+
+  let baseWhere;
+  if (search) {
+    baseWhere = and(
+      eq(bookmark.folderId, folderId),
+      eq(bookmark.isPinned, false),
+      or(
+        ilike(bookmark.title, `%${searchTerm}%`),
+        ilike(sql`(${bookmark.tags}::text)`, `%${searchTerm}%`)
+      )
+    );
+  } else {
+    baseWhere = and(
+      eq(bookmark.folderId, folderId),
+      eq(bookmark.isPinned, false)
+    );
+  }
+
+  const results = await db
+    .select()
+    .from(bookmark)
+    .where(baseWhere)
+    .orderBy(desc(bookmark.createdAt))
+    .limit(PAGE_SIZE + 1)
+    .offset(offset);
+
+  const bookmarksList = results.slice(0, PAGE_SIZE);
+  const hasMore = results.length > PAGE_SIZE;
+
+  const totalElements = await db
+    .select()
+    .from(bookmark)
+    .where(baseWhere)
+    .then((rows) => rows.length);
+
+  return c.json({ bookmarks: bookmarksList, hasMore, totalElements });
+});
+
+// New route: List pinned bookmarks for a folder (no pagination, can add later)
+foldersRouter.get("/:folderId/pinned", async (c) => {
+  const { folderId } = c.req.param();
+  const { search = "" } = c.req.query();
+  const searchTerm = (search as string).startsWith("#")
+    ? (search as string).slice(1)
+    : (search as string);
+
+  const baseConditions = [
+    eq(bookmark.folderId, folderId),
+    eq(bookmark.isPinned, true),
+  ];
+
+  let whereClause;
+  if (search) {
+    // Filter by title OR tags containing search
+    whereClause = and(
+      ...baseConditions,
+      or(
+        ilike(bookmark.title, `%${searchTerm}%`),
+        ilike(sql`(${bookmark.tags}::text)`, `%${searchTerm}%`)
+      )
+    );
+  } else {
+    whereClause = and(...baseConditions);
+  }
+
+  const pinned = await db
+    .select()
+    .from(bookmark)
+    .where(whereClause)
+    .orderBy(desc(bookmark.createdAt));
+
+  return c.json(pinned);
 });
