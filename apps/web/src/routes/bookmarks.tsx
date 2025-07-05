@@ -275,12 +275,14 @@ function RouteComponent() {
       mutationFn: createBookmarkFn,
       onMutate: async (newBookmark) => {
         setInputUrl("");
-        await queryClient.cancelQueries({ queryKey: ["bookmarks"] });
+
+        // Build a quick, readable title from the hostname so user sees something meaningful instantly
+        const tempTitle = getWebsiteName(newBookmark.url);
 
         const optimisticBookmark: Bookmark = {
           id: `temp-${Date.now()}`,
           url: newBookmark.url,
-          title: "Saving...",
+          title: tempTitle,
           faviconUrl: `https://www.google.com/s2/favicons?domain=${
             new URL(newBookmark.url).hostname
           }&sz=128`,
@@ -288,22 +290,43 @@ function RouteComponent() {
           createdAt: new Date(),
         };
 
+        // Update the directly-rendered list right away for snappier feedback
+        setFilteredBookmarks((prev) => [optimisticBookmark, ...prev]);
+
+        // Immediately inject into cache for instant UI update
         queryClient.setQueryData(
           ["bookmarks", { folderId: currentFolder?.id }],
           (oldData: any) => {
+            if (!oldData) return oldData; // if cache not ready yet, skip
             const newData = { ...oldData };
-            newData.pages[0].bookmarks.unshift(optimisticBookmark);
+            newData.pages[0].bookmarks = [
+              optimisticBookmark,
+              ...newData.pages[0].bookmarks,
+            ];
             return newData;
           }
         );
 
+        // Cancel ongoing fetches *after* we've done the optimistic update so we don't delay UI
+        void queryClient.cancelQueries({ queryKey: ["bookmarks"] });
+
         return { optimisticBookmark };
       },
       onSuccess: () => {
-        // Invalidate to get the final data from the server
+        // Immediately refetch once (placeholder data becomes available fast)
         queryClient.invalidateQueries({
           queryKey: ["bookmarks", { folderId: currentFolder?.id }],
         });
+
+        // Schedule a secondary refetch a bit later so we pick up the
+        // enriched metadata pushed by the server in the background.
+        // (Microlink usually responds within ~1s, but we give it some
+        // extra buffer.)
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["bookmarks", { folderId: currentFolder?.id }],
+          });
+        }, 3000);
       },
       onError: (err, newBookmark, context) => {
         // Rollback on error

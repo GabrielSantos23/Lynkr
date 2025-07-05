@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { db } from "../db";
 import { folder, bookmark } from "../db/schema/bookmarks";
 import { eq, ilike, and, desc, sql, or } from "drizzle-orm";
+import { encrypt, decrypt } from "../lib/encryption";
 
 export const foldersRouter = new Hono();
 
@@ -25,19 +26,25 @@ foldersRouter.post("/", async (c) => {
   // Use provided icon or default folder icon
   const folderIcon = icon && icon.trim().length > 0 ? icon : "📁";
 
+  // Encrypt values
+  const encryptedName = await encrypt(name);
+  const encryptedIcon = await encrypt(folderIcon);
+
   const [newFolder] = await db
     .insert(folder)
     .values({
       id: crypto.randomUUID(),
-      name,
-      icon: folderIcon,
+      name: encryptedName,
+      icon: encryptedIcon,
       userId,
       isShared: false,
       allowDuplicate: true,
     })
     .returning();
 
-  return c.json(newFolder, 201);
+  const plainFolder = await decryptFolderRow(newFolder);
+
+  return c.json(plainFolder, 201);
 });
 
 // List folders by user
@@ -47,7 +54,9 @@ foldersRouter.get("/:userId", async (c) => {
     .select()
     .from(folder)
     .where(eq(folder.userId, userId));
-  return c.json(result);
+
+  const decrypted = await Promise.all(result.map(decryptFolderRow));
+  return c.json(decrypted);
 });
 
 // Add route to list folders (optionally filtered by userId)
@@ -79,7 +88,9 @@ foldersRouter.get("/", async (c) => {
     _count: { bookmarks: Number(row.bookmarksCount) },
   }));
 
-  return c.json(mapped);
+  const decrypted = await Promise.all(mapped.map(decryptFolderRow));
+
+  return c.json(decrypted);
 });
 
 // Delete folder by id
@@ -114,13 +125,22 @@ foldersRouter.patch("/:folderId", async (c) => {
     return c.json({ message: "No values to update" }, 400);
   }
 
+  if (values.name !== undefined) {
+    values.name = await encrypt(values.name);
+  }
+  if (values.icon !== undefined) {
+    values.icon = await encrypt(values.icon);
+  }
+
   const [updated] = await db
     .update(folder)
     .set(values)
     .where(eq(folder.id, folderId))
     .returning();
 
-  return c.json(updated);
+  const plainUpdated = await decryptFolderRow(updated);
+
+  return c.json(plainUpdated);
 });
 
 // List bookmarks for a folder with pagination & search
@@ -161,7 +181,9 @@ foldersRouter.get("/:folderId/bookmarks", async (c) => {
     .limit(PAGE_SIZE + 1)
     .offset(offset);
 
-  const bookmarksList = results.slice(0, PAGE_SIZE);
+  const decryptedList = await Promise.all(results.map(decryptBookmarkRow));
+
+  const bookmarksList = decryptedList.slice(0, PAGE_SIZE);
   const hasMore = results.length > PAGE_SIZE;
 
   const totalElements = await db
@@ -206,5 +228,28 @@ foldersRouter.get("/:folderId/pinned", async (c) => {
     .where(whereClause)
     .orderBy(desc(bookmark.createdAt));
 
-  return c.json(pinned);
+  const decryptedPinned = await Promise.all(pinned.map(decryptBookmarkRow));
+
+  return c.json(decryptedPinned);
 });
+
+// Helper to decrypt folder row
+async function decryptFolderRow(row: any) {
+  return {
+    ...row,
+    name: await decrypt(row.name),
+    icon: await decrypt(row.icon),
+  };
+}
+
+// Helper to decrypt bookmark row (same fields as in bookmarks router)
+async function decryptBookmarkRow(row: any) {
+  return {
+    ...row,
+    url: await decrypt(row.url),
+    title: await decrypt(row.title),
+    faviconUrl: row.faviconUrl ? await decrypt(row.faviconUrl) : null,
+    ogImageUrl: row.ogImageUrl ? await decrypt(row.ogImageUrl) : null,
+    description: row.description ? await decrypt(row.description) : null,
+  };
+}

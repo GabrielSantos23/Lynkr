@@ -1,10 +1,13 @@
 # Lynkr
 
+A modern, open-source bookmark manager built with React, Hono, and PostgreSQL.
+
 This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, and more.
 
 ## Features
 
 - **TypeScript** - For type safety and improved developer experience
+- **Bookmark Management** - Save, organize, pin and share your favorite links with folders, tags, and powerful search.
 - **TanStack Router** - File-based routing with full type safety
 - **TailwindCSS** - Utility-first CSS for rapid UI development
 - **shadcn/ui** - Reusable UI components

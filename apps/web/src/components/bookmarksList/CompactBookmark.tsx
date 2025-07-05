@@ -58,6 +58,14 @@ export const CompactBookmark = ({
   const [title, setTitle] = useState(bookmark.title);
   const [openTagDialog, setOpenTagDialog] = useState(false);
 
+  // Keep local title in sync with props (unless currently editing to avoid clobbering user input)
+  useEffect(() => {
+    if (!isEditing) {
+      setTitle(bookmark.title);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookmark.title]);
+
   // TanStack Query's useMutation hook to handle the rename operation.
   const { mutate: renameBookmark } = useMutation({
     mutationFn: renameBookmarkFn,

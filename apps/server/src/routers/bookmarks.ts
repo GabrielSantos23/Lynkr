@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { db } from "../db";
 import { bookmark } from "../db/schema/bookmarks";
 import { eq, sql } from "drizzle-orm";
+import { encrypt, decrypt } from "../lib/encryption";
 
 export const bookmarksRouter = new Hono();
 
@@ -15,6 +16,18 @@ const getFaviconUrl = (url: string) => {
   }
 };
 
+// Helper to decrypt bookmark rows returned from DB
+async function decryptBookmarkRow(row: any) {
+  return {
+    ...row,
+    url: await decrypt(row.url),
+    title: await decrypt(row.title),
+    faviconUrl: row.faviconUrl ? await decrypt(row.faviconUrl) : null,
+    ogImageUrl: row.ogImageUrl ? await decrypt(row.ogImageUrl) : null,
+    description: row.description ? await decrypt(row.description) : null,
+  };
+}
+
 // POST /api/bookmarks  -> create bookmark
 bookmarksRouter.post("/", async (c) => {
   const body = await c.req.json<{ url: string; folderId: string }>();
@@ -23,64 +36,82 @@ bookmarksRouter.post("/", async (c) => {
   if (!url) return c.json({ message: "url is required" }, 400);
   if (!folderId) return c.json({ message: "folderId is required" }, 400);
 
-  // Attempt to fetch metadata via Microlink (simple & fast)
-  let meta: {
-    title: string | null;
-    faviconUrl: string | null;
-    ogImageUrl: string | null;
-    description: string | null;
-  } = { title: null, faviconUrl: null, ogImageUrl: null, description: null };
+  // Generate a deterministic id up-front so we can reference it in the async update later
+  const id = crypto.randomUUID();
 
-  try {
-    const res = await fetch(
-      `https://api.microlink.io/?url=${encodeURIComponent(url)}`
-    );
-    if (res.ok) {
-      const json = (await res.json()) as any;
-      meta = {
-        title: json?.data?.title ?? null,
-        faviconUrl: json?.data?.logo?.url ?? null,
-        ogImageUrl: json?.data?.image?.url ?? null,
-        description: json?.data?.description ?? null,
-      };
+  // --- Fast placeholder metadata (executed synchronously) ---
+  const hostname = (() => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return url;
     }
-  } catch (err) {
-    console.error("microlink fetch error", err);
-  }
+  })();
+  const placeholderTitle =
+    hostname.split(".")[0].charAt(0).toUpperCase() +
+    hostname.split(".")[0].slice(1);
+  const placeholderFavicon = getFaviconUrl(url);
 
-  // Fallbacks
-  if (!meta.title) {
-    const hostname = (() => {
-      try {
-        return new URL(url).hostname.replace(/^www\./, "");
-      } catch {
-        return url;
-      }
-    })();
-    meta.title =
-      hostname.split(".")[0].charAt(0).toUpperCase() +
-      hostname.split(".")[0].slice(1);
-  }
+  // Encrypt fields before inserting
+  const encryptedUrl = await encrypt(url);
+  const encryptedTitle = await encrypt(placeholderTitle);
+  const encryptedFavicon = placeholderFavicon
+    ? await encrypt(placeholderFavicon)
+    : null;
 
-  if (!meta.faviconUrl) {
-    meta.faviconUrl = getFaviconUrl(url);
-  }
-
+  // Insert bookmark immediately with placeholder data so UI can update instantly
   const [newBookmark] = await db
     .insert(bookmark)
     .values({
-      id: crypto.randomUUID(),
-      url,
-      title: meta.title ?? "", // title is non-null in schema
-      faviconUrl: meta.faviconUrl,
-      ogImageUrl: meta.ogImageUrl,
-      description: meta.description,
+      id,
+      url: encryptedUrl,
+      title: encryptedTitle, // now encrypted
+      faviconUrl: encryptedFavicon,
       folderId,
       tags: sql`'[]'::jsonb`,
     })
     .returning();
 
-  return c.json(newBookmark, 201);
+  const plainBookmark = await decryptBookmarkRow(newBookmark);
+
+  // --- Deferred metadata enrichment (non-blocking) ---
+  // We purposely do NOT await this so the request resolves fast.
+  void (async () => {
+    try {
+      const res = await fetch(
+        `https://api.microlink.io/?url=${encodeURIComponent(url)}`
+      );
+      if (res.ok) {
+        const json = (await res.json()) as any;
+        const meta = {
+          title: json?.data?.title ?? null,
+          faviconUrl: json?.data?.logo?.url ?? null,
+          ogImageUrl: json?.data?.image?.url ?? null,
+          description: json?.data?.description ?? null,
+        } as const;
+
+        const updateValues: Record<string, string | null> = {};
+        if (meta.title) updateValues.title = await encrypt(meta.title);
+        if (meta.faviconUrl)
+          updateValues.faviconUrl = await encrypt(meta.faviconUrl);
+        if (meta.ogImageUrl)
+          updateValues.ogImageUrl = await encrypt(meta.ogImageUrl);
+        if (meta.description)
+          updateValues.description = await encrypt(meta.description);
+
+        if (Object.keys(updateValues).length > 0) {
+          await db
+            .update(bookmark)
+            .set(updateValues)
+            .where(eq(bookmark.id, id));
+        }
+      }
+    } catch (err) {
+      console.error("Deferred metadata fetch error", err);
+    }
+  })();
+
+  return c.json(plainBookmark, 201);
 });
 
 // DELETE /api/bookmarks/:bookmarkId -> delete bookmark
@@ -114,26 +145,19 @@ bookmarksRouter.patch("/:bookmarkId", async (c) => {
     return c.json({ message: "No values to update" }, 400);
   }
 
-  if (values.tags) {
-    // Simple validation: max 4 tags, no spaces in name, max 1 word each, ensure color hex
-    if (values.tags.length > 4) {
-      return c.json({ message: "Max 4 tags allowed" }, 400);
-    }
-    for (const tag of values.tags) {
-      if (!/^#?[0-9A-Fa-f]{6}$/.test(tag.color)) {
-        return c.json({ message: "Invalid tag color" }, 400);
-      }
-      if (/\s/.test(tag.name) || tag.name.length === 0) {
-        return c.json({ message: "Tag name must be one word" }, 400);
-      }
-    }
+  // Encrypt mutable fields as needed
+  const updateData: any = { ...values };
+  if (updateData.title !== undefined) {
+    updateData.title = await encrypt(updateData.title);
   }
 
   const [updated] = await db
     .update(bookmark)
-    .set(values)
+    .set(updateData)
     .where(eq(bookmark.id, bookmarkId))
     .returning();
 
-  return c.json(updated);
+  const plainUpdated = await decryptBookmarkRow(updated);
+
+  return c.json(plainUpdated);
 });

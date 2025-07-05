@@ -1,0 +1,214 @@
+---
+title: "Lynkr 💾 — seu gerenciador de favoritos moderno (tour completo)"
+description: "Um passeio descontraído pelo Lynkr: stack, features, código por trás e como contribuir."
+date: 2025-07-04
+---
+
+> **TL;DR** — O Lynkr é open-source, roda em React Tanstack Router + Hono + PostgreSQL e foi feito pra você nunca mais perder aquele link que salvou "só pra ver depois". Bora ver os bastidores? 🚀
+
+<img src="/logo.png" alt="Logo do Lynkr" width="100" />
+
+## Por que mais um bookmark manager?
+
+Porque eu tinha um problema de nunca saber aonde eu salvei os meus links (😅) e alem disso nenhum serviço atual me dava:
+
+1. Pastas + tags **criptografadas** (sim, todos os links são criptografados!)
+2. Hotkeys estilo power-user pra mudar tema, layout etc.
+3. open source.
+
+## Stack
+
+| Camada   | Tech                               | Por que?                                |
+| -------- | ---------------------------------- | --------------------------------------- |
+| Frontend | React + TanStack Router + Tailwind | Rápido de desenvolver, tipado           |
+| UI       | shadcn/ui + radix ui puro          | Componentes acessíveis prontos pra usar |
+| Estado   | jotai + react-query                | Simples, focado, sem boilerplate        |
+| Backend  | Hono (Bun)                         | Performance sem abrir mão de DX         |
+| Database | PostgreSQL + Drizzle               | SQL de verdade com type-safety          |
+| Auth     | Better Auth                        | Fluxo pronto para google e github       |
+
+## Tour ⚡
+
+```bash
+# clone, instala dependências e roda tudo
+pnpm i
+pnpm db:push   # migrações ▶️ banco
+pnpm dev       # api 3000 / web 3001
+```
+
+Se tudo deu certo, o terminal vai cantar:
+
+```bash
+▲  server  | listening on http://localhost:3000
+⚡  web     | running at http://localhost:3001
+```
+
+Abra <http://localhost:3001>, crie conta e já comece a salvar links! 🎉
+
+## Variáveis de Ambiente
+
+Para testar localmente, crie dois arquivos `.env` — um em `apps/server` e outro em `apps/web`:
+
+### apps/server/.env
+
+```bash
+# Banco Postgres local
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/lynkr
+
+# Permite as requisições do front
+CORS_ORIGIN=http://localhost:3001
+
+# Segredos do Better Auth
+BETTER_AUTH_SECRET=$(openssl rand -hex 32)
+BETTER_AUTH_URL=http://localhost:3000
+
+# Chave simétrica para criptografia de dados 🔐
+# Gere com: openssl rand -base64 32
+ENCRYPTION_KEY=<sua_chave_base64>
+
+# OAuth opcional (Google / GitHub)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+```
+
+### apps/web/.env
+
+```bash
+# URL pública da API
+VITE_SERVER_URL=http://localhost:3000
+```
+
+Com isso salvo, rode `pnpm dev` de novo e tudo vai (provavelmente) funcionar. 🤗
+
+---
+
+## Por dentro do código 👀
+
+### 1. Criptografia? Temos! 🔐
+
+Cada título, URL e afins são cifrados com **libsodium** antes ir para o banco de dados. Segue o micro-helper:
+
+```ts
+// server/src/lib/encryption.ts
+import sodiumLib from "libsodium-wrappers";
+
+let sodium: typeof import("libsodium-wrappers");
+let key: Uint8Array;
+
+async function init() {
+  if (sodium) return;
+  sodium = await sodiumLib.ready.then(() => sodiumLib);
+  key = sodium.from_base64(
+    process.env.ENCRYPTION_KEY!,
+    sodium.base64_variants.ORIGINAL
+  );
+}
+
+export async function encrypt(plain: string) {
+  await init();
+  const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
+  const cipher = sodium.crypto_secretbox_easy(
+    sodium.from_string(plain),
+    nonce,
+    key
+  );
+  return sodium.to_base64(
+    new Uint8Array([...nonce, ...cipher]),
+    sodium.base64_variants.ORIGINAL
+  );
+}
+```
+
+Para rodar local, basta jogar `openssl rand -base64 32` no `.env` 🔑.
+
+### 2. Rotas REST
+
+```ts
+// server/src/routers/folders.ts (trecho)
+foldersRouter.post("/", async (c) => {
+  const { name, icon, userId } = await c.req.json();
+  if (!name) return c.json({ message: "name is required" }, 400);
+  const encryptedName = await encrypt(name);
+  const [folder] = await db
+    .insert(folderTable)
+    .values({
+      id: crypto.randomUUID(),
+      name: encryptedName,
+      icon: await encrypt(icon ?? "📁"),
+      userId,
+    })
+    .returning();
+  return c.json(await decryptFolderRow(folder), 201);
+});
+```
+
+Nada de magic strings: Drizzle gera tipos de cada coluna, então não tem perigo de mandar _string_ onde era número.
+
+### 3. Hotkeys everywhere ⚡️
+
+Adicionei tambem atalhos, aperta **`v`** pra alternar entre lista compacta/expandida, **`d`** pra liberar links duplicados na pasta e por aí vai:
+
+```ts
+// web/src/components/bookmark_components/useHotkeys.ts
+useHotkeys("v", () => setViewStyle(v === "compact" ? "expanded" : "compact"));
+useHotkeys("t", () => setTheme(theme === "light" ? "dark" : "light"));
+```
+
+Mais produtivo, menos cliques. ❤️
+
+### 4. Busca que não frita o servidor 🔍
+
+Ninguém merece requisição atrás de requisição enquanto digita. Então:
+
+```ts
+// web/src/hooks/useDebounce.ts
+export function useDebounce<T>(value: T, delay = 500) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+```
+
+A query só é chamada apos 500ms. 🎭
+
+### 5. Tags coloridas (& limitadas a 4)
+
+```tsx
+// web/src/components/TagDialog.tsx (resumido)
+const canAdd = tags.length < 4 && newName.trim() && !/\s/.test(newName);
+```
+
+Interface minimalista com `<Dialog>` da Radix + presets de cor.
+
+### 6. Dark mode 🌙
+
+```tsx
+// web/src/components/mode-toggle.tsx
+<Button onClick={() => setTheme("dark")}>🌙</Button>
+```
+
+---
+
+## Roadmap 🗺️
+
+- [ ] Import/export via **JSON/HTML**
+- [ ] Extensão de navegador
+- [ ] Integração com Pocket/Instapaper
+- [ ] Modo offline via Service Worker
+
+Ficou com ideia? Abre uma issue e vamo conversar!
+
+## Contribuindo 💜
+
+1. Crie um branch: `git checkout -b feat/seu-feature`
+2. Faça mágica ✨
+3. Abra PR — usamos Conventional Commits, mas se errar a gente ajusta.
+
+---
+
+Valeu por chegar até aqui! Se curtiu, dá uma estrela no repo 😎.

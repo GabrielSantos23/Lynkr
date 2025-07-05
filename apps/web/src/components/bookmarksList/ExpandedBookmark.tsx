@@ -43,6 +43,14 @@ export const ExpandedBookmark = ({
   const [title, setTitle] = useState(bookmark.title);
   const [openTagDialog, setOpenTagDialog] = useState(false);
 
+  // Keep local title in sync with prop updates (avoid overwriting during edit)
+  useEffect(() => {
+    if (!isEditing) {
+      setTitle(bookmark.title);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookmark.title]);
+
   // TanStack Query's useMutation hook for the rename operation.
   const { mutate: renameBookmark } = useMutation({
     mutationFn: renameBookmarkFn,
