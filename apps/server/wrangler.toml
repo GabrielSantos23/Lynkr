@@ -2,7 +2,3 @@ name = "zyvon-server"
 main = "dist/src/index.js"
 compatibility_date = "2025-07-07"
 compatibility_flags = ["nodejs_compat"]
-
-[vars]
-
-[env.production] 

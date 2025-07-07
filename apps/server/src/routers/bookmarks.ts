@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { db } from "../db";
+import { getDb } from "../db";
 import { bookmark } from "../db/schema/bookmarks";
 import { eq, sql } from "drizzle-orm";
 import { encrypt, decrypt } from "../lib/encryption";
@@ -30,6 +30,7 @@ async function decryptBookmarkRow(row: any) {
 
 // POST /api/bookmarks  -> create bookmark
 bookmarksRouter.post("/", async (c) => {
+  const db = getDb();
   const body = await c.req.json<{ url: string; folderId: string }>();
   const { url, folderId } = body;
 
@@ -116,6 +117,7 @@ bookmarksRouter.post("/", async (c) => {
 
 // DELETE /api/bookmarks/:bookmarkId -> delete bookmark
 bookmarksRouter.delete("/:bookmarkId", async (c) => {
+  const db = getDb();
   const { bookmarkId } = c.req.param();
   if (!bookmarkId) return c.json({ message: "bookmarkId is required" }, 400);
 
@@ -125,6 +127,7 @@ bookmarksRouter.delete("/:bookmarkId", async (c) => {
 
 // PATCH /api/bookmarks/:bookmarkId -> update bookmark (title, folderId, isPinned)
 bookmarksRouter.patch("/:bookmarkId", async (c) => {
+  const db = getDb();
   const { bookmarkId } = c.req.param();
 
   if (!bookmarkId) {

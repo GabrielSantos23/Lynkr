@@ -1,8 +1,10 @@
 import "dotenv/config";
-import { db } from "../db";
+import { getDb } from "../db";
 import { folder, bookmark } from "../db/schema/bookmarks";
 import { encrypt, decrypt } from "../lib/encryption";
 import { eq } from "drizzle-orm";
+
+const db = getDb();
 
 async function encryptFolders() {
   const rows = await db.select().from(folder);

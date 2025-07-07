@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { auth } from "./lib/auth";
+import { getAuth } from "./lib/auth";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
@@ -19,7 +19,7 @@ app.use(
   })
 );
 
-app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
+app.on(["POST", "GET"], "/api/auth/**", (c) => getAuth().handler(c.req.raw));
 
 // folders routes
 app.route("/api/folders", foldersRouter);

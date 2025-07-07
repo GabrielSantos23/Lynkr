@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { db } from "../db";
+import { getDb } from "../db";
 import { folder, bookmark } from "../db/schema/bookmarks";
 import { eq, ilike, and, desc, sql, or } from "drizzle-orm";
 import { encrypt, decrypt } from "../lib/encryption";
@@ -8,6 +8,7 @@ export const foldersRouter = new Hono();
 
 // Create a folder
 foldersRouter.post("/", async (c) => {
+  const db = getDb();
   const { name, icon, userId } = await c.req.json<{
     name: string;
     icon: string;
@@ -49,6 +50,7 @@ foldersRouter.post("/", async (c) => {
 
 // List folders by user
 foldersRouter.get("/:userId", async (c) => {
+  const db = getDb();
   const { userId } = c.req.param();
   const result = await db
     .select()
@@ -61,6 +63,7 @@ foldersRouter.get("/:userId", async (c) => {
 
 // Add route to list folders (optionally filtered by userId)
 foldersRouter.get("/", async (c) => {
+  const db = getDb();
   const { userId, folderId } = c.req.query();
 
   // Build base query selecting folder columns + bookmarks count
@@ -95,6 +98,7 @@ foldersRouter.get("/", async (c) => {
 
 // Delete folder by id
 foldersRouter.delete("/:folderId", async (c) => {
+  const db = getDb();
   const { folderId } = c.req.param();
 
   if (!folderId) {
@@ -107,6 +111,7 @@ foldersRouter.delete("/:folderId", async (c) => {
 
 // Update folder (e.g., toggle sharing, rename, icon change)
 foldersRouter.patch("/:folderId", async (c) => {
+  const db = getDb();
   const { folderId } = c.req.param();
   const values = await c.req.json<
     Partial<{
@@ -145,6 +150,7 @@ foldersRouter.patch("/:folderId", async (c) => {
 
 // List bookmarks for a folder with pagination & search
 foldersRouter.get("/:folderId/bookmarks", async (c) => {
+  const db = getDb();
   const { folderId } = c.req.param();
   const { page = "1", search = "" } = c.req.query();
   const pageNumber = parseInt(page as string, 10) || 1;
@@ -197,6 +203,7 @@ foldersRouter.get("/:folderId/bookmarks", async (c) => {
 
 // New route: List pinned bookmarks for a folder (no pagination, can add later)
 foldersRouter.get("/:folderId/pinned", async (c) => {
+  const db = getDb();
   const { folderId } = c.req.param();
   const { search = "" } = c.req.query();
   const searchTerm = (search as string).startsWith("#")
