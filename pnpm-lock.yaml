@@ -51,6 +51,9 @@ importers:
       '@types/bun':
         specifier: ^1.2.6
         version: 1.2.17
+      '@types/libsodium-wrappers':
+        specifier: ^0.7.14
+        version: 0.7.14
       drizzle-kit:
         specifier: ^0.31.2
         version: 0.31.4
@@ -1943,6 +1946,9 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@types/libsodium-wrappers@0.7.14':
+    resolution: {integrity: sha512-5Kv68fXuXK0iDuUir1WPGw2R9fOZUlYlSAa0ztMcL0s0BfIDTqg9GXz8K30VJpPP3sxWhbolnQma2x+/TfkzDQ==}
 
   '@types/node@22.16.0':
     resolution: {integrity: sha512-B2egV9wALML1JCpv3VQoQ+yesQKAmNMBIAY7OteVrikcOcAkWm+dGL6qpeCktPjAv6N1JLnhbNiqS35UpFyBsQ==}
@@ -4708,6 +4714,8 @@ snapshots:
       bun-types: 1.2.17
 
   '@types/estree@1.0.8': {}
+
+  '@types/libsodium-wrappers@0.7.14': {}
 
   '@types/node@22.16.0':
     dependencies:
