@@ -1,0 +1,4 @@
+name = "lynkr2-server"
+main = "./apps/server/src/index.ts"
+compatibility_date = "2025-07-07"
+compatibility_flags = ["nodejs_compat"] 
