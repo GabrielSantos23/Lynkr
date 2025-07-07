@@ -1,6 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Settings,
   Menu,
@@ -25,12 +25,14 @@ import * as Checkbox from "@radix-ui/react-checkbox";
 import { Spinner } from "../ui/Spinner";
 import { useProfileHotkeys } from "./useHotkeys";
 import { useTheme } from "../theme-provider";
+import { useTour } from "../guided-tour";
 
 export const ProfileDropdown = () => {
   const [signOutChecked, setSignOutChecked] = useState(false);
   const { data: session } = authClient.useSession();
   const [open, setOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { isActive, currentStepId } = useTour();
 
   const {
     handleUpdateFolder,
@@ -41,6 +43,14 @@ export const ProfileDropdown = () => {
     viewStyle,
     showMonths,
   } = useProfileHotkeys();
+
+  useEffect(() => {
+    if (isActive && currentStepId === "profile-dropdown") {
+      setOpen(true);
+    } else {
+      setOpen(false);
+    }
+  }, [isActive, currentStepId]);
 
   const handleSignOut = () => {
     setSignOutChecked(true);

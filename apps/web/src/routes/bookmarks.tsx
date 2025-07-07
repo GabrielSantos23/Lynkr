@@ -39,6 +39,7 @@ import type { Bookmark } from "@/types/bookmark";
 import { SkeletonList } from "@/components/skeletons/SkeletonList";
 import { Index as BookmarksList } from "@/components/bookmarksList/BookmarksList";
 import { PinIcon } from "lucide-react";
+import TourProvider, { TourStep, useTour } from "@/components/guided-tour";
 
 export const Route = createFileRoute("/bookmarks")({
   component: RouteComponent,
@@ -435,14 +436,33 @@ function RouteComponent() {
   }, [filteredBookmarksData]);
 
   const handleCreateBookmark = useCallback(
-    (url?: string) => {
+    (urlParam?: string) => {
       if (!currentFolder) return;
+
+      // Determine which URL we are attempting to add
+      const finalUrl = urlParam ?? inputUrl;
+
+      // Prevent duplicates when the folder is configured to disallow them
+      if (
+        !currentFolder.allowDuplicate &&
+        filteredBookmarks.some((bookmark) => bookmark.url === finalUrl)
+      ) {
+        setIsDuplicate(true);
+
+        // Reset duplicate feedback after a short delay so the user can try again
+        setTimeout(() => {
+          setIsDuplicate(false);
+        }, 2000);
+
+        return;
+      }
+
       addBookmarkMutation({
-        url: url ?? inputUrl,
+        url: finalUrl,
         folderId: currentFolder.id,
       });
     },
-    [addBookmarkMutation, inputUrl, currentFolder]
+    [addBookmarkMutation, inputUrl, currentFolder, filteredBookmarks]
   );
 
   const handleDeleteBookmark = useCallback(
@@ -475,6 +495,29 @@ function RouteComponent() {
     return () => window.removeEventListener("keydown", keyHandler);
   }, []);
 
+  // Placeholder component shown only during its tour step
+  const LinkPlaceholder: React.FC = () => {
+    const { isActive, currentStepId } = useTour();
+    const visible = isActive && currentStepId === "link-placeholder";
+    return (
+      <TourStep
+        id="link-placeholder"
+        title="Your bookmarks"
+        content="Saved bookmarks will appear here."
+        order={3}
+        position="top"
+      >
+        <div
+          className={`mt-4 w-full rounded-md border border-black/10 bg-black/5 p-4 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/5 ${
+            visible ? "opacity-100" : "opacity-0"
+          } transition-opacity duration-300`}
+        >
+          https://example.com — A sample bookmark card
+        </div>
+      </TourStep>
+    );
+  };
+
   // Effect: global paste to add bookmark without focusing input
   useEffect(() => {
     const pasteHandler = (e: ClipboardEvent) => {
@@ -500,169 +543,190 @@ function RouteComponent() {
   }, [isAddingBookmark, currentFolder, handleCreateBookmark]);
 
   return (
-    <div className="p-8">
-      <Header inputRef={inputRef} />
-      <div className="flex flex-col gap-4 items-center">
-        <div className="w-full  px-4 pb-32 sm:w-[40rem] md:w-[48rem] md:px-0 lg:w-[50rem]">
-          <motion.form
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="relative mx-2.5 md:mt-8 mt-6 md:mx-12"
-            onSubmit={(e) => {
-              e.preventDefault();
+    <TourProvider autoStart ranOnce={true} storageKey="lynkr-tour-completed">
+      <div className="p-8">
+        <Header inputRef={inputRef} />
+        <div className="flex flex-col gap-4 items-center">
+          <div className="w-full  px-4 pb-32 sm:w-[40rem] md:w-[48rem] md:px-0 lg:w-[50rem]">
+            <TourStep
+              id="url-input"
+              title="Add a new bookmark"
+              content="Paste or type a URL and press Enter to save it to your current folder."
+              order={2}
+              position="bottom"
+            >
+              <motion.form
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="relative mx-2.5 md:mt-8 mt-6 md:mx-12"
+                onSubmit={(e) => {
+                  e.preventDefault();
 
-              if (inputUrl.length === 0 || isAddingBookmark || !currentFolder) {
-                return;
-              }
+                  if (
+                    inputUrl.length === 0 ||
+                    isAddingBookmark ||
+                    !currentFolder
+                  ) {
+                    return;
+                  }
 
-              if (
-                !currentFolder?.allowDuplicate &&
-                filteredBookmarks.some((bookmark) => bookmark.url === inputUrl)
-              ) {
-                setIsDuplicate(true);
+                  if (
+                    !currentFolder?.allowDuplicate &&
+                    filteredBookmarks.some(
+                      (bookmark) => bookmark.url === inputUrl
+                    )
+                  ) {
+                    setIsDuplicate(true);
 
-                setTimeout(() => {
-                  setIsDuplicate(false);
-                }, 2000);
+                    setTimeout(() => {
+                      setIsDuplicate(false);
+                    }, 2000);
 
-                return;
-              }
+                    return;
+                  }
 
-              handleCreateBookmark();
-            }}
-          >
-            <input
-              type="url"
-              name="url"
-              id="url"
-              ref={inputRef}
-              value={isDuplicate ? "Duplicate" : inputUrl}
-              disabled={isAddingBookmark || !currentFolder}
-              onChange={(e) => setInputUrl(e.target.value)}
-              onPaste={(e) => {
-                const text = e.clipboardData.getData("text/plain");
+                  handleCreateBookmark();
+                }}
+              >
+                <input
+                  type="url"
+                  name="url"
+                  id="url"
+                  ref={inputRef}
+                  value={isDuplicate ? "Duplicate" : inputUrl}
+                  disabled={isAddingBookmark || !currentFolder}
+                  onChange={(e) => setInputUrl(e.target.value)}
+                  onPaste={(e) => {
+                    const text = e.clipboardData.getData("text/plain");
 
-                if (
-                  text.length === 0 ||
-                  inputUrl.length > 0 ||
-                  !isValidURL(text) ||
-                  isAddingBookmark
-                ) {
-                  return;
-                }
+                    if (
+                      text.length === 0 ||
+                      inputUrl.length > 0 ||
+                      !isValidURL(text) ||
+                      isAddingBookmark
+                    ) {
+                      return;
+                    }
 
-                setInputUrl(text);
-
-                if (
-                  !currentFolder?.allowDuplicate &&
-                  filteredBookmarks.some((bookmark) => bookmark.url === text)
-                ) {
-                  setIsDuplicate(true);
-
-                  setTimeout(() => {
                     setInputUrl(text);
 
-                    setIsDuplicate(false);
-                  }, 2000);
+                    if (
+                      !currentFolder?.allowDuplicate &&
+                      filteredBookmarks.some(
+                        (bookmark) => bookmark.url === text
+                      )
+                    ) {
+                      setIsDuplicate(true);
 
-                  return;
-                }
+                      setTimeout(() => {
+                        setInputUrl(text);
 
-                handleCreateBookmark(text);
-              }}
-              placeholder="https://... or ⌘F"
-              className={`w-full rounded-lg border border-black/10 bg-black/10 px-4 py-2 font-normal text-black no-underline placeholder-zinc-600 transition duration-200 ease-in-out placeholder:font-normal hover:bg-black/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 
-                  ${
-                    isDuplicate
-                      ? "animate-shake ring-2 ring-red-500 focus:outline-none focus:ring-red-500"
-                      : "outline-zinc-500 focus:outline-none focus:ring-zinc-500"
-                  }`}
-            />
-            {(isAddingBookmark || !currentFolder || isSearching) &&
-              folders &&
-              folders?.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.5, transition: { delay: 1 } }}
-                  exit={{ opacity: 0 }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 transform"
-                >
-                  <Spinner size="md" />
-                </motion.div>
-              )}
-          </motion.form>
+                        setIsDuplicate(false);
+                      }, 2000);
 
-          <div className={`mx-3 mt-6`}>
-            <Separator />
-          </div>
+                      return;
+                    }
 
-          {/* Pinned bookmarks section (now below the input) */}
-          {pinnedBookmarks && pinnedBookmarks.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              className=" mt-4 "
-            >
-              <div className="flex flex-row gap-2 items-start">
-                <div className="flex flex-col justify-center h-full pt-2 mt-5">
-                  <PinIcon className="w-4 h-4 text-muted-foreground" />
+                    handleCreateBookmark(text);
+                  }}
+                  placeholder="https://... or ⌘F"
+                  className={`w-full rounded-lg border border-black/10 bg-black/10 px-4 py-2 font-normal text-black no-underline placeholder-zinc-600 transition duration-200 ease-in-out placeholder:font-normal hover:bg-black/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 
+                      ${
+                        isDuplicate
+                          ? "animate-shake ring-2 ring-red-500 focus:outline-none focus:ring-red-500"
+                          : "outline-zinc-500 focus:outline-none focus:ring-zinc-500"
+                      }`}
+                />
+                {(isAddingBookmark || !currentFolder || isSearching) &&
+                  folders &&
+                  folders?.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0.5, transition: { delay: 1 } }}
+                      exit={{ opacity: 0 }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 transform"
+                    >
+                      <Spinner size="md" />
+                    </motion.div>
+                  )}
+              </motion.form>
+            </TourStep>
+
+            <div className={`mx-3 mt-6`}>
+              <Separator />
+            </div>
+
+            {/* Pinned bookmarks section (now below the input) */}
+            {pinnedBookmarks && pinnedBookmarks.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+                className=" mt-4 "
+              >
+                <div className="flex flex-row gap-2 items-start">
+                  <div className="flex flex-col justify-center h-full pt-2 mt-5">
+                    <PinIcon className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <BookmarksList
+                      showMonths={false}
+                      viewStyle={viewStyle}
+                      bookmarks={pinnedBookmarks}
+                      handleDeleteBookmark={handleDeleteBookmark}
+                      isPrivatePage
+                    />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <BookmarksList
-                    showMonths={false}
-                    viewStyle={viewStyle}
-                    bookmarks={pinnedBookmarks}
-                    handleDeleteBookmark={handleDeleteBookmark}
-                    isPrivatePage
-                  />
-                </div>
-              </div>
-              <Separator className="mt-4" />
-            </motion.div>
-          )}
-
-          <motion.ul>
-            {filteredBookmarks.length === 0 &&
-              (isSearching || !infiniteBookmarksData) && (
-                <SkeletonList viewStyle={viewStyle} />
-              )}
-
-            {filteredBookmarks.length > 0 && (
-              <BookmarksList
-                showMonths={showMonths}
-                viewStyle={viewStyle}
-                bookmarks={filteredBookmarks}
-                handleDeleteBookmark={handleDeleteBookmark}
-                isPrivatePage
-              />
+                <Separator className="mt-4" />
+              </motion.div>
             )}
 
-            {/* {(!folders || folders.length === 0) &&
-                fetchFolders.isFetched &&
-                !fetchFolders.isFetching && <CreateFirstFolder />} */}
+            <motion.ul>
+              {filteredBookmarks.length === 0 &&
+                (isSearching || !infiniteBookmarksData) && (
+                  <SkeletonList viewStyle={viewStyle} />
+                )}
 
-            {/* {totalBookmarks === 0 &&
-                // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-                ((bookmarks && bookmarks.length === 0) ||
-                  (filteredBookmarks && filteredBookmarks.length === 0)) &&
-                fetchBookmarks.isFetched &&
-                fetchFolders.isFetched &&
-                !isDuplicate &&
-                folders &&
-                folders?.length > 0 &&
-                (!fetchBookmarsWithSearch.isFetching ||
-                  inputUrl.length === 0) &&
-                !addBookmark.isLoading && <EmptyState />} */}
-          </motion.ul>
-          <div className="flex justify-center pt-10 align-middle">
-            {isFetchingNextPage &&
-              filteredBookmarks.length > 0 &&
-              inputUrl.length === 0 && <Spinner size="md" />}
+              {filteredBookmarks.length > 0 && (
+                <BookmarksList
+                  showMonths={showMonths}
+                  viewStyle={viewStyle}
+                  bookmarks={filteredBookmarks}
+                  handleDeleteBookmark={handleDeleteBookmark}
+                  isPrivatePage
+                />
+              )}
+
+              {/* {(!folders || folders.length === 0) &&
+                  fetchFolders.isFetched &&
+                  !fetchFolders.isFetching && <CreateFirstFolder />} */}
+
+              {/* {totalBookmarks === 0 &&
+                  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+                  ((bookmarks && bookmarks.length === 0) ||
+                    (filteredBookmarks && filteredBookmarks.length === 0)) &&
+                  fetchBookmarks.isFetched &&
+                  fetchFolders.isFetched &&
+                  !isDuplicate &&
+                  folders &&
+                  folders?.length > 0 &&
+                  (!fetchBookmarsWithSearch.isFetching ||
+                    inputUrl.length === 0) &&
+                  !addBookmark.isLoading && <EmptyState />} */}
+            </motion.ul>
+            <div className="flex justify-center pt-10 align-middle">
+              {isFetchingNextPage &&
+                filteredBookmarks.length > 0 &&
+                inputUrl.length === 0 && <Spinner size="md" />}
+            </div>
           </div>
+
+          {/* Link placeholder for tour */}
+          <LinkPlaceholder />
         </div>
       </div>
-    </div>
+    </TourProvider>
   );
 }

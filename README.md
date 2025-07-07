@@ -1,13 +1,18 @@
 # Lynkr
 
-A modern, open-source bookmark manager built with React, Hono, and PostgreSQL.
+Lynkr is a **modern, open-source bookmark manager** that helps you save, organize & **encrypt** your favourite links.
+Build folders, add tags, pin items, use blazing-fast search and power-user hotkeys – all backed by PostgreSQL and an end-to-end typed TypeScript stack.
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, and more.
+Under the hood Lynkr runs on React + TanStack Router (frontend) and Hono (backend), with Drizzle ORM for type-safe SQL and libsodium for symmetric encryption.
+
+This repository was bootstrapped with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack).
 
 ## Features
 
 - **TypeScript** - For type safety and improved developer experience
 - **Bookmark Management** - Save, organize, pin and share your favorite links with folders, tags, and powerful search.
+- **End-to-end Encryption** – Every title, URL and tag is encrypted client-side with libsodium before touching the database.
+- **Productive Hotkeys** – Quickly change layouts, toggle theme or deduplicate links with single-key shortcuts.
 - **TanStack Router** - File-based routing with full type safety
 - **TailwindCSS** - Utility-first CSS for rapid UI development
 - **shadcn/ui** - Reusable UI components
@@ -18,35 +23,53 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Authentication** - Email & password authentication with Better Auth
 - **Turborepo** - Optimized monorepo build system
 
-## Getting Started
+## Installation
 
-First, install the dependencies:
+Follow the steps below to spin up Lynkr locally:
 
-```bash
-pnpm install
-```
+1. **Clone & install dependencies**
 
-## Database Setup
+   ```bash
+   git clone https://github.com/<your-user>/lynkr.git
+   cd lynkr
+   pnpm install
+   ```
 
-This project uses PostgreSQL with Drizzle ORM.
+2. **Configure environment variables**
 
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/server/.env` file with your PostgreSQL connection details.
+   Create a `.env` file inside `apps/server` (adjust values as required):
 
-3. Apply the schema to your database:
+   ```bash
+   # apps/server/.env
+   DATABASE_URL=postgres://postgres:postgres@localhost:5432/lynkr
+   CORS_ORIGIN=http://localhost:3001
+   BETTER_AUTH_SECRET=$(openssl rand -hex 32)
+   BETTER_AUTH_URL=http://localhost:3000
+   # libsodium symmetric key (generate with: openssl rand -base64 32)
+   ENCRYPTION_KEY=<your_base64_key>
+   ```
 
-```bash
-pnpm db:push
-```
+   And another for the web client:
 
-Then, run the development server:
+   ```bash
+   # apps/web/.env
+   VITE_SERVER_URL=http://localhost:3000
+   ```
 
-```bash
-pnpm dev
-```
+3. **Apply the database schema**
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
+   ```bash
+   pnpm db:push
+   ```
+
+4. **Start the apps in development mode**
+
+   ```bash
+   pnpm dev
+   ```
+
+   • API: http://localhost:3000  
+   • Web UI: http://localhost:3001
 
 ## Project Structure
 

@@ -22,6 +22,7 @@ import CreateFolder from "./CreateFolder";
 import DeleteFolder from "./DeleteFolder";
 import { authClient } from "@/lib/auth-client";
 import { getFaviconForFolder } from "@/lib/utils";
+import { useTour } from "../guided-tour";
 
 type Folder = {
   id: string;
@@ -42,6 +43,7 @@ export const FolderDropdown = () => {
   const [, setBookmarks] = useAtom(bookmarksAtom);
   const [, setCurrentPage] = useAtom(currentPageAtom);
   const [selectOpen, setSelectOpen] = useAtom(folderDropdownOpenAtom);
+  const { isActive, currentStepId } = useTour();
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useAtom(
     isNewFolderModalOpenAtom
   );
@@ -178,6 +180,16 @@ export const FolderDropdown = () => {
       }
     }
   }, [currentFolder]);
+
+  // Ensure the dropdown is open while its tour step is active
+  useEffect(() => {
+    if (isActive && currentStepId === "folder-dropdown") {
+      setSelectOpen(true);
+    } else {
+      // Close when leaving the step or when the tour is inactive
+      setSelectOpen(false);
+    }
+  }, [isActive, currentStepId, setSelectOpen]);
 
   // Handle loading and error states
   if (isLoading) {
