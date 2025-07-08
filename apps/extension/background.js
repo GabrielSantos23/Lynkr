@@ -13,7 +13,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Constant Lynkr backend URL – keep in sync with popup.js
-const SERVER_URL = "http://localhost:8787";
+const SERVER_URL = "https://zyvon-server.gabriel-gs605.workers.dev";
+// URL of the Lynkr web app (used for OAuth sign-in). Update if hosted elsewhere.
+const WEB_URL = "https://your-lynkr-frontend.example.com";
 
 async function getAuthAndFolder() {
   return new Promise((resolve) => {
@@ -112,5 +114,28 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 chrome.commands.onCommand.addListener((command, tab) => {
   if (command === "save_page" && tab?.url) {
     saveBookmark(tab.url, tab.id);
+  }
+});
+
+// Detect when user logs in via Lynkr web and extract token automatically
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (
+    info.status === "complete" &&
+    tab.url &&
+    (tab.url.startsWith(SERVER_URL) || tab.url.startsWith(WEB_URL))
+  ) {
+    chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => {
+        try {
+          const token = localStorage.getItem("better-auth-session-token");
+          if (token) {
+            chrome.runtime.sendMessage({ type: "SET_LYNKR_TOKEN", token });
+          }
+        } catch (e) {
+          // ignore cross-origin access errors
+        }
+      },
+    });
   }
 });

@@ -7,7 +7,7 @@
     "default_title": "Add to Lynkr",
     "default_popup": "popup.html"
   },
-  "permissions": ["activeTab", "storage", "tabs", "contextMenus"],
+  "permissions": ["activeTab", "storage", "tabs", "contextMenus", "scripting"],
   "commands": {
     "save_page": {
       "suggested_key": {

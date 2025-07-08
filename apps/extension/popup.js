@@ -1,5 +1,6 @@
 (function () {
-  const SERVER_URL = "http://localhost:8787"; // TODO: update to your Lynkr server URL
+  const SERVER_URL = "https://zyvon-server.gabriel-gs605.workers.dev";
+  const WEB_URL = "https://your-lynkr-frontend.example.com";
   let currentTabUrl = "";
   let folders = [];
 
@@ -130,13 +131,12 @@
     });
 
     // Store token button
-    document.getElementById("saveToken").addEventListener("click", async () => {
-      const token = document.getElementById("tokenInput").value.trim();
-      if (!token) return;
-      chrome.storage.sync.set({ lynkrToken: token }, () => {
-        switchTab("save");
-        loadFolders();
-      });
+
+    document.getElementById("loginGoogle").addEventListener("click", () => {
+      chrome.tabs.create({ url: `${WEB_URL}/login?provider=google` });
+    });
+    document.getElementById("loginGithub").addEventListener("click", () => {
+      chrome.tabs.create({ url: `${WEB_URL}/login?provider=github` });
     });
   });
 })();

@@ -9,6 +9,8 @@
         margin: 0;
         padding: 16px;
         width: 260px;
+        background-color: #0d1117; /* dark background similar to app */
+        color: #e5e7eb; /* light foreground text */
       }
       #add {
         background-color: #2d7bf6;
@@ -33,18 +35,23 @@
         padding: 6px;
         cursor: pointer;
         border-bottom: 2px solid transparent;
+        color: #8b949e;
       }
       .tab.active {
         border-color: #2d7bf6;
         font-weight: bold;
+        color: #e5e7eb;
       }
       select {
         width: 100%;
         margin-bottom: 8px;
         padding: 6px;
+        background-color: #161b22;
+        color: #e5e7eb;
+        border: 1px solid #30363d;
       }
       #save-section,
-      #signin-section {
+      .section {
         display: none;
       }
       .section.active {
@@ -54,6 +61,21 @@
         width: 100%;
         padding: 6px;
         margin-bottom: 8px;
+      }
+      .auth-btn {
+        background-color: #2d7bf6;
+        color: #fff;
+        border: none;
+        padding: 8px 6px;
+        margin-bottom: 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        width: 100%;
+      }
+      /* Button hover */
+      #add:hover,
+      .auth-btn:hover {
+        background-color: #4791ff;
       }
     </style>
   </head>
@@ -70,9 +92,12 @@
     </div>
 
     <div id="signin-section" class="section">
-      <p>Paste your Lynkr token:</p>
-      <input type="text" id="tokenInput" placeholder="session token" />
-      <button id="saveToken">Store token</button>
+      <button id="loginGoogle" class="auth-btn">Login with Google</button>
+      <button id="loginGithub" class="auth-btn">Login with GitHub</button>
+      <p style="font-size: 12px; color: #666; margin-top: 8px">
+        A browser tab will open; after you finish the OAuth flow the extension
+        will store your session automatically.
+      </p>
     </div>
 
     <script src="popup.js"></script>
