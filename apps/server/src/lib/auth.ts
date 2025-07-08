@@ -15,7 +15,10 @@ export function getAuth() {
       provider: "pg",
       schema: schema,
     }),
-    trustedOrigins: [process.env.CORS_ORIGIN || ""],
+    trustedOrigins: (process.env.CORS_ORIGIN || "")
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean),
     emailAndPassword: {
       enabled: true,
     },

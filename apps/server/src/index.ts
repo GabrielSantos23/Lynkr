@@ -12,7 +12,25 @@ app.use(logger());
 app.use(
   "/*",
   cors({
-    origin: process.env.CORS_ORIGIN || "",
+    origin: (requestOrigin) => {
+      const env = process.env.CORS_ORIGIN || "";
+      const allowedOrigins = env
+        .split(",")
+        .map((o) => o.trim())
+        .filter(Boolean);
+
+      if (allowedOrigins.includes("*")) {
+        // Reflect the caller's origin when wildcard is enabled (credentials safe).
+        return requestOrigin ?? "";
+      }
+
+      if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+        return requestOrigin;
+      }
+
+      // Fallback to first allowed origin (or empty string) when the caller's origin isn't explicitly allowed.
+      return allowedOrigins[0] || "";
+    },
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
