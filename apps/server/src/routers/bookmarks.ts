@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { getDb } from "../db";
 import { bookmark } from "../db/schema/bookmarks";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import { encrypt, decrypt } from "../lib/encryption";
 
 export const bookmarksRouter = new Hono();
@@ -31,11 +31,29 @@ async function decryptBookmarkRow(row: any) {
 // POST /api/bookmarks  -> create bookmark
 bookmarksRouter.post("/", async (c) => {
   const db = getDb();
-  const body = await c.req.json<{ url: string; folderId: string }>();
-  const { url, folderId } = body;
+  const body = await c.req.json<{
+    url: string;
+    folderId: string;
+    ogImageUrl?: string | null;
+  }>();
+  const { url, folderId, ogImageUrl } = body;
 
   if (!url) return c.json({ message: "url is required" }, 400);
   if (!folderId) return c.json({ message: "folderId is required" }, 400);
+
+  // Encrypt url once for duplicate checking & insert
+  const encryptedUrl = await encrypt(url);
+
+  // Duplicate detection: if the same url already exists in this folder, return 409
+  const duplicate = await db
+    .select({ id: bookmark.id })
+    .from(bookmark)
+    .where(and(eq(bookmark.folderId, folderId), eq(bookmark.url, encryptedUrl)))
+    .limit(1);
+
+  if (duplicate.length > 0) {
+    return c.json({ message: "Bookmark already exists" }, 409);
+  }
 
   // Generate a deterministic id up-front so we can reference it in the async update later
   const id = crypto.randomUUID();
@@ -54,7 +72,6 @@ bookmarksRouter.post("/", async (c) => {
   const placeholderFavicon = getFaviconUrl(url);
 
   // Encrypt fields before inserting
-  const encryptedUrl = await encrypt(url);
   const encryptedTitle = await encrypt(placeholderTitle);
   const encryptedFavicon = placeholderFavicon
     ? await encrypt(placeholderFavicon)
@@ -70,6 +87,7 @@ bookmarksRouter.post("/", async (c) => {
       faviconUrl: encryptedFavicon,
       folderId,
       tags: sql`'[]'::jsonb`,
+      ogImageUrl: ogImageUrl ? await encrypt(ogImageUrl) : null,
     })
     .returning();
 

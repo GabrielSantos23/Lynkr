@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Lynkr</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+        padding: 16px;
+        width: 260px;
+      }
+      #add {
+        background-color: #2d7bf6;
+        color: #fff;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        width: 100%;
+      }
+      #status {
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+      .tabs {
+        display: flex;
+        margin-bottom: 12px;
+      }
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 6px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+      }
+      .tab.active {
+        border-color: #2d7bf6;
+        font-weight: bold;
+      }
+      select {
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 6px;
+      }
+      #save-section,
+      #signin-section {
+        display: none;
+      }
+      .section.active {
+        display: block;
+      }
+      #tokenInput {
+        width: 100%;
+        padding: 6px;
+        margin-bottom: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tabs">
+      <div id="tab-save" class="tab active">Save</div>
+      <div id="tab-signin" class="tab">Sign&nbsp;in</div>
+    </div>
+
+    <div id="save-section" class="section active">
+      <p id="status">Preparing…</p>
+      <select id="folder-select"></select>
+      <button id="add">Save current page</button>
+    </div>
+
+    <div id="signin-section" class="section">
+      <p>Paste your Lynkr token:</p>
+      <input type="text" id="tokenInput" placeholder="session token" />
+      <button id="saveToken">Store token</button>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

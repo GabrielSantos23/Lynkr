@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Lynkr Bookmark Extension",
+  "description": "Quickly bookmark the current tab using your Lynkr account.",
+  "version": "0.0.1",
+  "action": {
+    "default_title": "Add to Lynkr",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["activeTab", "storage", "tabs", "contextMenus"],
+  "commands": {
+    "save_page": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L"
+      },
+      "description": "Save current page to Lynkr"
+    }
+  },
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
