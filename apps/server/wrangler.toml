@@ -2,3 +2,7 @@ name = "zyvon-server"
 main = "dist/src/index.js"
 compatibility_date = "2025-07-07"
 compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Lista de origens permitidas para CORS (sem barra no final)
+CORS_ORIGIN = "http://localhost:5173,https://lynkr-web.app,http://localhost:3001"
