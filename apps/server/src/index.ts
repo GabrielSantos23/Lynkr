@@ -12,6 +12,19 @@ import { logger } from "hono/logger";
 import { foldersRouter } from "./routers/folders";
 import { bookmarksRouter } from "./routers/bookmarks";
 
+// Ensure __dirname exists for libraries that expect it (Node commonjs pattern).
+// Do this early before any imports might need it
+if (typeof globalThis.__dirname === "undefined") {
+  // For Cloudflare Workers, we just need a placeholder value
+  // since the actual filesystem path doesn't exist in the Workers runtime
+  Object.defineProperty(globalThis, "__dirname", {
+    value: "/",
+    writable: false,
+    enumerable: false,
+    configurable: false,
+  });
+}
+
 const app = new Hono();
 
 app.use(logger());
@@ -60,26 +73,5 @@ app.route("/api/bookmarks", bookmarksRouter);
 app.get("/", (c) => {
   return c.text("OK");
 });
-
-// Ensure __dirname exists for libraries that expect it (Node commonjs pattern).
-if (typeof globalThis.__dirname === "undefined") {
-  // Derive a sensible default based on the current module URL if possible
-  try {
-    const dir = new URL(".", import.meta.url).pathname;
-    Object.defineProperty(globalThis, "__dirname", {
-      value: dir,
-      writable: false,
-      enumerable: false,
-      configurable: false,
-    });
-  } catch {
-    Object.defineProperty(globalThis, "__dirname", {
-      value: "/",
-      writable: false,
-      enumerable: false,
-      configurable: false,
-    });
-  }
-}
 
 export default app;

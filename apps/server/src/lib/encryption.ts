@@ -1,65 +1,122 @@
-import sodiumLib from "libsodium-wrappers";
+// We'll use Web Crypto API which is available in both Node.js and Cloudflare Workers
+// This is a simplified implementation that uses AES-GCM for encryption
 
-// Lazy-initialize libsodium and the symmetric key only once per process
-let sodium: typeof import("libsodium-wrappers");
-let key: Uint8Array;
+// Cached key for reuse
+let cryptoKey: CryptoKey | null = null;
 
+/**
+ * Initialize the crypto key from the environment variable
+ */
 async function init() {
-  if (sodium) return; // already initialised
-
-  sodium = (await sodiumLib.ready.then(
-    () => sodiumLib
-  )) as typeof import("libsodium-wrappers");
+  if (cryptoKey) return; // already initialized
 
   const base64Key = process.env.ENCRYPTION_KEY;
   if (!base64Key) {
     throw new Error("ENCRYPTION_KEY env variable is missing");
   }
 
-  key = sodium.from_base64(base64Key, sodium.base64_variants.ORIGINAL);
-  if (key.length !== sodium.crypto_secretbox_KEYBYTES) {
-    throw new Error(
-      `ENCRYPTION_KEY must decode to ${sodium.crypto_secretbox_KEYBYTES} bytes`
-    );
-  }
+  // Convert base64 key to Uint8Array
+  const keyData = base64ToUint8Array(base64Key);
+
+  // Import the key for AES-GCM
+  cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "AES-GCM", length: 256 },
+    false, // not extractable
+    ["encrypt", "decrypt"]
+  );
 }
 
 /**
- * Encrypt plaintext into Base64 string using libsodium secretbox (XSalsa20-Poly1305).
+ * Convert base64 string to Uint8Array
+ */
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
+ * Convert Uint8Array to base64 string
+ */
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+/**
+ * Encrypt plaintext into Base64 string using AES-GCM
  */
 export async function encrypt(plaintext: string): Promise<string> {
   await init();
 
-  const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
-  const messageBytes = sodium.from_string(plaintext);
-  const cipher = sodium.crypto_secretbox_easy(messageBytes, nonce, key);
+  if (!cryptoKey) {
+    throw new Error("Encryption key not initialized");
+  }
 
-  // Prepend nonce to ciphertext so it can be used during decryption
-  const combined = new Uint8Array(nonce.length + cipher.length);
-  combined.set(nonce);
-  combined.set(cipher, nonce.length);
+  // Generate a random 12-byte IV
+  const iv = crypto.getRandomValues(new Uint8Array(12));
 
-  return sodium.to_base64(combined, sodium.base64_variants.ORIGINAL);
+  // Convert plaintext to Uint8Array
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plaintext);
+
+  // Encrypt the data
+  const ciphertext = await crypto.subtle.encrypt(
+    {
+      name: "AES-GCM",
+      iv,
+    },
+    cryptoKey,
+    data
+  );
+
+  // Combine IV and ciphertext
+  const combined = new Uint8Array(
+    iv.length + new Uint8Array(ciphertext).length
+  );
+  combined.set(iv);
+  combined.set(new Uint8Array(ciphertext), iv.length);
+
+  // Return as base64
+  return uint8ArrayToBase64(combined);
 }
 
 /**
- * Decrypt Base64 ciphertext produced by {@link encrypt} back to UTF-8 string.
+ * Decrypt Base64 ciphertext produced by {@link encrypt} back to UTF-8 string
  */
 export async function decrypt(ciphertextBase64: string): Promise<string> {
   await init();
 
-  const combined = sodium.from_base64(
-    ciphertextBase64,
-    sodium.base64_variants.ORIGINAL
-  );
-
-  const nonce = combined.slice(0, sodium.crypto_secretbox_NONCEBYTES);
-  const cipher = combined.slice(sodium.crypto_secretbox_NONCEBYTES);
-
-  const decrypted = sodium.crypto_secretbox_open_easy(cipher, nonce, key);
-  if (!decrypted) {
-    throw new Error("Decryption failed or data corrupted");
+  if (!cryptoKey) {
+    throw new Error("Encryption key not initialized");
   }
 
-  return sodium.to_string(decrypted);
+  // Convert base64 to Uint8Array
+  const combined = base64ToUint8Array(ciphertextBase64);
+
+  // Extract IV and ciphertext
+  const iv = combined.slice(0, 12);
+  const ciphertext = combined.slice(12);
+
+  // Decrypt the data
+  const decrypted = await crypto.subtle.decrypt(
+    {
+      name: "AES-GCM",
+      iv,
+    },
+    cryptoKey,
+    ciphertext
+  );
+
+  // Convert decrypted data to string
+  const decoder = new TextDecoder();
+  return decoder.decode(decrypted);
 }
