@@ -1,4 +1,21 @@
-import "dotenv/config";
+// Conditionally load dotenv only when running in a Node.js environment (not Cloudflare Workers)
+if (typeof process !== "undefined" && process?.versions?.node) {
+  // Dynamically import so that the bundle doesn't include Node-only code in edge runtimes.
+  await import("dotenv/config");
+}
+
+// Minimal polyfill for __dirname in runtimes (like Cloudflare) where it doesn't exist.
+// This is needed for some third-party CommonJS dependencies that expect it.
+// In Node ESM, __dirname is also not defined, so this won't overwrite anything there.
+if (typeof globalThis.__dirname === "undefined") {
+  Object.defineProperty(globalThis, "__dirname", {
+    value: "/",
+    writable: false,
+    enumerable: false,
+    configurable: false,
+  });
+}
+
 import { getAuth } from "./lib/auth";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
