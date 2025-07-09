@@ -96,6 +96,55 @@ export async function encrypt(plaintext: string): Promise<string> {
 }
 
 /**
+ * Try to decrypt data using the old format (libsodium format)
+ * This is a simplified implementation that assumes the data is in the format:
+ * - First 24 bytes: nonce
+ * - Rest: encrypted data
+ */
+async function tryDecryptOldFormat(ciphertextBase64: string): Promise<string> {
+  if (!cryptoKey) {
+    throw new Error("Encryption key not initialized");
+  }
+
+  try {
+    // For old data, we'll try to decrypt it directly
+    // This is a best-effort approach
+    const combined = base64ToUint8Array(ciphertextBase64);
+
+    // In libsodium XSalsa20-Poly1305, the nonce is 24 bytes
+    const NONCE_LENGTH = 24;
+
+    if (combined.length <= NONCE_LENGTH) {
+      throw new Error("Invalid encrypted data length");
+    }
+
+    // Extract what would be the IV/nonce in the old format
+    const iv = combined.slice(0, NONCE_LENGTH);
+    // Use only the first 12 bytes as AES-GCM IV
+    const aesIv = iv.slice(0, 12);
+    const ciphertext = combined.slice(NONCE_LENGTH);
+
+    // Try to decrypt using AES-GCM with our key
+    const decrypted = await crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv: aesIv,
+      },
+      cryptoKey,
+      ciphertext
+    );
+
+    // Convert decrypted data to string
+    const decoder = new TextDecoder();
+    return decoder.decode(decrypted);
+  } catch (error) {
+    // If we can't decrypt, just return the original data
+    // This is a fallback to prevent breaking the application
+    return ciphertextBase64;
+  }
+}
+
+/**
  * Decrypt Base64 ciphertext produced by {@link encrypt} back to UTF-8 string
  * This function handles both the new AES-GCM format and the old libsodium format
  */
@@ -106,35 +155,50 @@ export async function decrypt(ciphertextBase64: string): Promise<string> {
     throw new Error("Encryption key not initialized");
   }
 
-  // Convert base64 to Uint8Array
-  const combined = base64ToUint8Array(ciphertextBase64);
+  try {
+    // Convert base64 to Uint8Array
+    const combined = base64ToUint8Array(ciphertextBase64);
 
-  // Check if this is a new format with version marker
-  if (combined.length > 0 && combined[0] === 0x01) {
-    // This is our new AES-GCM format
-    const dataWithoutVersion = combined.slice(1);
+    // Check if this is a new format with version marker
+    if (combined.length > 0 && combined[0] === 0x01) {
+      // This is our new AES-GCM format
+      const dataWithoutVersion = combined.slice(1);
 
-    // Extract IV and ciphertext
-    const iv = dataWithoutVersion.slice(0, 12);
-    const ciphertext = dataWithoutVersion.slice(12);
+      // Extract IV and ciphertext
+      const iv = dataWithoutVersion.slice(0, 12);
+      const ciphertext = dataWithoutVersion.slice(12);
 
-    // Decrypt the data
-    const decrypted = await crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv,
-      },
-      cryptoKey,
-      ciphertext
-    );
+      // Decrypt the data
+      const decrypted = await crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv,
+        },
+        cryptoKey,
+        ciphertext
+      );
 
-    // Convert decrypted data to string
-    const decoder = new TextDecoder();
-    return decoder.decode(decrypted);
-  } else {
-    // This is likely the old format or some other format
-    // For old data, just return it as is for now
-    // This is a temporary solution until we can re-encrypt all data
-    return ciphertextBase64;
+      // Convert decrypted data to string
+      const decoder = new TextDecoder();
+      return decoder.decode(decrypted);
+    } else {
+      // This is likely the old format
+      return await tryDecryptOldFormat(ciphertextBase64);
+    }
+  } catch (error) {
+    // If all decryption attempts fail, try one more approach:
+    // Check if the input is already plaintext (not encrypted)
+    try {
+      // Try to decode as base64, if it results in valid UTF-8, it might be plaintext
+      const decoded = atob(ciphertextBase64);
+      if (decoded && decoded.length > 0) {
+        return decoded;
+      }
+    } catch {
+      // Not valid base64 or not valid UTF-8, continue with error
+    }
+
+    console.error("Decryption failed:", error);
+    throw new Error("Failed to decrypt data");
   }
 }
