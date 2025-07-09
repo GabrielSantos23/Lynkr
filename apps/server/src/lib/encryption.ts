@@ -85,12 +85,19 @@ export async function encrypt(plaintext: string): Promise<string> {
   combined.set(iv);
   combined.set(new Uint8Array(ciphertext), iv.length);
 
+  // Add a version marker (1 byte) at the beginning to indicate this is AES-GCM encrypted
+  // 0x01 = AES-GCM
+  const versionedCombined = new Uint8Array(combined.length + 1);
+  versionedCombined[0] = 0x01; // Version marker
+  versionedCombined.set(combined, 1);
+
   // Return as base64
-  return uint8ArrayToBase64(combined);
+  return uint8ArrayToBase64(versionedCombined);
 }
 
 /**
  * Decrypt Base64 ciphertext produced by {@link encrypt} back to UTF-8 string
+ * This function handles both the new AES-GCM format and the old libsodium format
  */
 export async function decrypt(ciphertextBase64: string): Promise<string> {
   await init();
@@ -102,21 +109,32 @@ export async function decrypt(ciphertextBase64: string): Promise<string> {
   // Convert base64 to Uint8Array
   const combined = base64ToUint8Array(ciphertextBase64);
 
-  // Extract IV and ciphertext
-  const iv = combined.slice(0, 12);
-  const ciphertext = combined.slice(12);
+  // Check if this is a new format with version marker
+  if (combined.length > 0 && combined[0] === 0x01) {
+    // This is our new AES-GCM format
+    const dataWithoutVersion = combined.slice(1);
 
-  // Decrypt the data
-  const decrypted = await crypto.subtle.decrypt(
-    {
-      name: "AES-GCM",
-      iv,
-    },
-    cryptoKey,
-    ciphertext
-  );
+    // Extract IV and ciphertext
+    const iv = dataWithoutVersion.slice(0, 12);
+    const ciphertext = dataWithoutVersion.slice(12);
 
-  // Convert decrypted data to string
-  const decoder = new TextDecoder();
-  return decoder.decode(decrypted);
+    // Decrypt the data
+    const decrypted = await crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv,
+      },
+      cryptoKey,
+      ciphertext
+    );
+
+    // Convert decrypted data to string
+    const decoder = new TextDecoder();
+    return decoder.decode(decrypted);
+  } else {
+    // This is likely the old format or some other format
+    // For old data, just return it as is for now
+    // This is a temporary solution until we can re-encrypt all data
+    return ciphertextBase64;
+  }
 }

@@ -12,7 +12,8 @@
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:encrypt": "bun run src/scripts/encryptExisting.ts"
+    "db:encrypt": "bun run src/scripts/encryptExisting.ts",
+    "db:reencrypt": "bun run src/scripts/reencryptData.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
