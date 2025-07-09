@@ -50,14 +50,11 @@ export default function CreateFolder({ onSuccess }: CreateFolderProps) {
       return res.json();
     },
     onSuccess: () => {
-      // Refresh folders list
       queryClient.invalidateQueries({ queryKey: ["folders"] });
 
-      // Reset form
       setName("");
       setIcon("");
 
-      // Notify parent to close modal if provided
       onSuccess?.();
     },
   });
@@ -68,7 +65,6 @@ export default function CreateFolder({ onSuccess }: CreateFolderProps) {
     <FolderIcon className="w-4 h-4 text-muted-foreground" />
   );
 
-  // Close picker when clicking outside
   useEffect(() => {
     if (!pickerOpen) return;
     function handleClick(e: MouseEvent) {

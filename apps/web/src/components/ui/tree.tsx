@@ -7,7 +7,6 @@ import { ChevronRight, Folder, File, FolderOpen } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 
-// Tree Context
 interface TreeContextType {
   expandedIds: Set<string>;
   selectedIds: string[];
@@ -33,7 +32,6 @@ const useTree = () => {
   return context;
 };
 
-// Tree variants
 const treeVariants = cva(
   "w-full bg-background border border-border rounded-ele shadow-sm/2",
   {
@@ -53,7 +51,7 @@ const treeVariants = cva(
       variant: "default",
       size: "default",
     },
-  },
+  }
 );
 
 const treeItemVariants = cva(
@@ -75,10 +73,9 @@ const treeItemVariants = cva(
       variant: "default",
       selected: false,
     },
-  },
+  }
 );
 
-// Provider Props
 export interface TreeProviderProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof treeVariants> {
@@ -95,7 +92,6 @@ export interface TreeProviderProps
   indent?: number;
 }
 
-// Tree Provider
 const TreeProvider = React.forwardRef<HTMLDivElement, TreeProviderProps>(
   (
     {
@@ -116,10 +112,10 @@ const TreeProvider = React.forwardRef<HTMLDivElement, TreeProviderProps>(
       indent = 20,
       ...props
     },
-    ref,
+    ref
   ) => {
     const [expandedIds, setExpandedIds] = React.useState<Set<string>>(
-      new Set(defaultExpandedIds),
+      new Set(defaultExpandedIds)
     );
     const [internalSelectedIds, setInternalSelectedIds] =
       React.useState<string[]>(selectedIds);
@@ -137,7 +133,7 @@ const TreeProvider = React.forwardRef<HTMLDivElement, TreeProviderProps>(
           return newSet;
         });
       },
-      [onNodeExpand],
+      [onNodeExpand]
     );
 
     const handleSelection = React.useCallback(
@@ -164,7 +160,7 @@ const TreeProvider = React.forwardRef<HTMLDivElement, TreeProviderProps>(
         currentSelectedIds,
         isControlled,
         onSelectionChange,
-      ],
+      ]
     );
 
     const contextValue: TreeContextType = {
@@ -196,17 +192,15 @@ const TreeProvider = React.forwardRef<HTMLDivElement, TreeProviderProps>(
         </motion.div>
       </TreeContext.Provider>
     );
-  },
+  }
 );
 
 TreeProvider.displayName = "TreeProvider";
 
-// Tree Props
 export interface TreeProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
 }
 
-// Tree
 const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
   ({ className, asChild = false, children, ...props }, ref) => {
     const Comp = asChild ? Slot : "div";
@@ -216,12 +210,11 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         {children}
       </Comp>
     );
-  },
+  }
 );
 
 Tree.displayName = "Tree";
 
-// Tree Item Props
 export interface TreeItemProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof treeItemVariants> {
@@ -236,7 +229,6 @@ export interface TreeItemProps
   asChild?: boolean;
 }
 
-// Tree Item
 const TreeItem = React.forwardRef<HTMLDivElement, TreeItemProps>(
   (
     {
@@ -255,7 +247,7 @@ const TreeItem = React.forwardRef<HTMLDivElement, TreeItemProps>(
       onClick,
       ...props
     },
-    ref,
+    ref
   ) => {
     const {
       expandedIds,
@@ -296,7 +288,7 @@ const TreeItem = React.forwardRef<HTMLDivElement, TreeItemProps>(
       <div className="select-none">
         <motion.div
           className={cn(
-            treeItemVariants({ variant, selected: isSelected, className }),
+            treeItemVariants({ variant, selected: isSelected, className })
           )}
           style={{ paddingInlineStart: level * indent + 8 }}
           onClick={handleClick}
@@ -395,7 +387,7 @@ const TreeItem = React.forwardRef<HTMLDivElement, TreeItemProps>(
         </AnimatePresence>
       </div>
     );
-  },
+  }
 );
 
 TreeItem.displayName = "TreeItem";

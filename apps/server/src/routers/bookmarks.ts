@@ -6,7 +6,6 @@ import { encrypt, decrypt } from "../lib/encryption";
 
 export const bookmarksRouter = new Hono();
 
-// Helper to build favicon URL
 const getFaviconUrl = (url: string) => {
   try {
     const hostname = new URL(url).hostname;
@@ -16,7 +15,6 @@ const getFaviconUrl = (url: string) => {
   }
 };
 
-// Helper to decrypt bookmark rows returned from DB
 async function decryptBookmarkRow(row: any) {
   return {
     ...row,
@@ -28,7 +26,6 @@ async function decryptBookmarkRow(row: any) {
   };
 }
 
-// POST /api/bookmarks  -> create bookmark
 bookmarksRouter.post("/", async (c) => {
   const db = getDb();
   const body = await c.req.json<{
@@ -41,10 +38,7 @@ bookmarksRouter.post("/", async (c) => {
   if (!url) return c.json({ message: "url is required" }, 400);
   if (!folderId) return c.json({ message: "folderId is required" }, 400);
 
-  // Encrypt url once for duplicate checking & insert
   const encryptedUrl = await encrypt(url);
-
-  // Duplicate detection: if the same url already exists in this folder, return 409
   const duplicate = await db
     .select({ id: bookmark.id })
     .from(bookmark)
@@ -55,10 +49,8 @@ bookmarksRouter.post("/", async (c) => {
     return c.json({ message: "Bookmark already exists" }, 409);
   }
 
-  // Generate a deterministic id up-front so we can reference it in the async update later
   const id = crypto.randomUUID();
 
-  // --- Fast placeholder metadata (executed synchronously) ---
   const hostname = (() => {
     try {
       return new URL(url).hostname.replace(/^www\./, "");
@@ -71,19 +63,17 @@ bookmarksRouter.post("/", async (c) => {
     hostname.split(".")[0].slice(1);
   const placeholderFavicon = getFaviconUrl(url);
 
-  // Encrypt fields before inserting
   const encryptedTitle = await encrypt(placeholderTitle);
   const encryptedFavicon = placeholderFavicon
     ? await encrypt(placeholderFavicon)
     : null;
 
-  // Insert bookmark immediately with placeholder data so UI can update instantly
   const [newBookmark] = await db
     .insert(bookmark)
     .values({
       id,
       url: encryptedUrl,
-      title: encryptedTitle, // now encrypted
+      title: encryptedTitle,
       faviconUrl: encryptedFavicon,
       folderId,
       tags: sql`'[]'::jsonb`,
@@ -93,8 +83,6 @@ bookmarksRouter.post("/", async (c) => {
 
   const plainBookmark = await decryptBookmarkRow(newBookmark);
 
-  // --- Deferred metadata enrichment (non-blocking) ---
-  // We purposely do NOT await this so the request resolves fast.
   void (async () => {
     try {
       const res = await fetch(
@@ -133,7 +121,6 @@ bookmarksRouter.post("/", async (c) => {
   return c.json(plainBookmark, 201);
 });
 
-// DELETE /api/bookmarks/:bookmarkId -> delete bookmark
 bookmarksRouter.delete("/:bookmarkId", async (c) => {
   const db = getDb();
   const { bookmarkId } = c.req.param();
@@ -143,7 +130,6 @@ bookmarksRouter.delete("/:bookmarkId", async (c) => {
   return c.json({ success: true });
 });
 
-// PATCH /api/bookmarks/:bookmarkId -> update bookmark (title, folderId, isPinned)
 bookmarksRouter.patch("/:bookmarkId", async (c) => {
   const db = getDb();
   const { bookmarkId } = c.req.param();
@@ -152,7 +138,6 @@ bookmarksRouter.patch("/:bookmarkId", async (c) => {
     return c.json({ message: "bookmarkId is required" }, 400);
   }
 
-  // Parse partial body
   const values = await c.req.json<
     Partial<{
       title: string;
@@ -166,7 +151,6 @@ bookmarksRouter.patch("/:bookmarkId", async (c) => {
     return c.json({ message: "No values to update" }, 400);
   }
 
-  // Encrypt mutable fields as needed
   const updateData: any = { ...values };
   if (updateData.title !== undefined) {
     updateData.title = await encrypt(updateData.title);

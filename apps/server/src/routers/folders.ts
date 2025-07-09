@@ -6,7 +6,6 @@ import { encrypt, decrypt } from "../lib/encryption";
 
 export const foldersRouter = new Hono();
 
-// Create a folder
 foldersRouter.post("/", async (c) => {
   const db = getDb();
   const { name, icon, userId } = await c.req.json<{
@@ -20,14 +19,11 @@ foldersRouter.post("/", async (c) => {
   }
 
   if (!userId) {
-    // In a real app you'd extract the user id from the auth session/JWT.
     return c.json({ message: "userId is required" }, 400);
   }
 
-  // Use provided icon or default folder icon
   const folderIcon = icon && icon.trim().length > 0 ? icon : "📁";
 
-  // Encrypt values
   const encryptedName = await encrypt(name);
   const encryptedIcon = await encrypt(folderIcon);
 
@@ -48,7 +44,6 @@ foldersRouter.post("/", async (c) => {
   return c.json(plainFolder, 201);
 });
 
-// List folders by user
 foldersRouter.get("/:userId", async (c) => {
   const db = getDb();
   const { userId } = c.req.param();
@@ -61,15 +56,13 @@ foldersRouter.get("/:userId", async (c) => {
   return c.json(decrypted);
 });
 
-// Add route to list folders (optionally filtered by userId)
 foldersRouter.get("/", async (c) => {
   const db = getDb();
   const { userId, folderId } = c.req.query();
 
-  // Build base query selecting folder columns + bookmarks count
   const foldersWithCountsQuery = db
     .select({
-      folder: folder, // all columns via nested object
+      folder: folder,
       bookmarksCount: sql<number>`COUNT(${bookmark.id})::int`,
     })
     .from(folder)
@@ -85,7 +78,6 @@ foldersRouter.get("/", async (c) => {
     result = await foldersWithCountsQuery;
   }
 
-  // Flatten response: merge folder fields + _count.bookmarks
   const mapped = result.map((row: any) => ({
     ...row.folder,
     _count: { bookmarks: Number(row.bookmarksCount) },
@@ -96,7 +88,6 @@ foldersRouter.get("/", async (c) => {
   return c.json(decrypted);
 });
 
-// Delete folder by id
 foldersRouter.delete("/:folderId", async (c) => {
   const db = getDb();
   const { folderId } = c.req.param();
@@ -109,7 +100,6 @@ foldersRouter.delete("/:folderId", async (c) => {
   return c.json({ success: true });
 });
 
-// Update folder (e.g., toggle sharing, rename, icon change)
 foldersRouter.patch("/:folderId", async (c) => {
   const db = getDb();
   const { folderId } = c.req.param();
@@ -148,7 +138,6 @@ foldersRouter.patch("/:folderId", async (c) => {
   return c.json(plainUpdated);
 });
 
-// List bookmarks for a folder with pagination & search
 foldersRouter.get("/:folderId/bookmarks", async (c) => {
   const db = getDb();
   const { folderId } = c.req.param();
@@ -201,7 +190,6 @@ foldersRouter.get("/:folderId/bookmarks", async (c) => {
   return c.json({ bookmarks: bookmarksList, hasMore, totalElements });
 });
 
-// New route: List pinned bookmarks for a folder (no pagination, can add later)
 foldersRouter.get("/:folderId/pinned", async (c) => {
   const db = getDb();
   const { folderId } = c.req.param();
@@ -217,7 +205,6 @@ foldersRouter.get("/:folderId/pinned", async (c) => {
 
   let whereClause;
   if (search) {
-    // Filter by title OR tags containing search
     whereClause = and(
       ...baseConditions,
       or(
@@ -240,7 +227,6 @@ foldersRouter.get("/:folderId/pinned", async (c) => {
   return c.json(decryptedPinned);
 });
 
-// Helper to decrypt folder row
 async function decryptFolderRow(row: any) {
   return {
     ...row,
@@ -249,7 +235,6 @@ async function decryptFolderRow(row: any) {
   };
 }
 
-// Helper to decrypt bookmark row (same fields as in bookmarks router)
 async function decryptBookmarkRow(row: any) {
   return {
     ...row,

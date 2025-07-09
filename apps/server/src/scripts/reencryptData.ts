@@ -12,8 +12,6 @@ async function reencryptFolders() {
 
   for (const row of rows) {
     try {
-      // Re-encrypt folder data with new encryption method
-      // We're using the raw values here, as they will be decrypted correctly by our compatibility layer
       const encryptedName = await encrypt(row.name);
       const encryptedIcon = await encrypt(row.icon);
 

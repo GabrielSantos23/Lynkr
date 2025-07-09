@@ -24,7 +24,6 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { getFaviconForFolder } from "@/lib/utils";
 
-// Update the type to be more flexible
 type InputRefType = RefObject<HTMLInputElement | null>;
 
 export const Header = ({ inputRef }: { inputRef: InputRefType }) => {
@@ -98,7 +97,6 @@ export const Header = ({ inputRef }: { inputRef: InputRefType }) => {
           setCurrentFolder(folder);
           localStorage.setItem("currentFolderId", folder.id);
 
-          // Directly update document title and favicon for immediate feedback
           document.title = folder.name;
           const faviconUrl = getFaviconForFolder(folder);
           const linkElement = document.querySelector('link[rel="icon"]');
@@ -127,7 +125,7 @@ export const Header = ({ inputRef }: { inputRef: InputRefType }) => {
       exit={{ opacity: 0 }}
       className={`flex w-full ${
         session?.user ? "" : "hidden"
-      } flex-row items-center justify-between px-8 py-6 md:px-12`}
+      } flex-row items-center justify-between px-3 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6`}
     >
       <TourStep
         id="folder-dropdown"
@@ -138,7 +136,7 @@ export const Header = ({ inputRef }: { inputRef: InputRefType }) => {
       >
         <FolderDropdown />
       </TourStep>
-      <div className="flex flex-row gap-2">
+      <div className="flex flex-row gap-1 sm:gap-2">
         <TourStep
           id="share-dropdown"
           title="Share your folder"

@@ -12,7 +12,6 @@ export function getAuth() {
   const baseURL = process.env.BETTER_AUTH_URL || "";
   const webURL = process.env.WEB_URL || "http://localhost:3001";
 
-  // Ensure we have both the local and production web URLs in trusted origins
   const trustedOrigins = [
     ...(process.env.CORS_ORIGIN || "")
       .split(",")
@@ -47,7 +46,6 @@ export function getAuth() {
     secret: process.env.BETTER_AUTH_SECRET,
     baseURL: baseURL,
     advanced: {
-      // Force all Better-Auth cookies (session_token, session_data, etc.) to be cross-site compatible.
       useSecureCookies: true,
       defaultCookieAttributes: {
         sameSite: "none",
@@ -58,7 +56,6 @@ export function getAuth() {
       },
       sessionCookieName: "better-auth-session-token",
       sessionDataCookieName: "better-auth-session-data",
-      // Allow any callback URL
       validateCallbackURL: () => true,
     },
   });

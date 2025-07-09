@@ -11,7 +11,6 @@ const router = createRouter({
   context: {},
 });
 
-// Instantiate a single QueryClient for the entire app
 const queryClient = new QueryClient();
 
 declare module "@tanstack/react-router" {

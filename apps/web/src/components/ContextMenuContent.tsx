@@ -5,10 +5,8 @@ import { useAtom } from "jotai";
 import { ArrowRight, Link, Pencil, Pin, Tag as TagIcon } from "lucide-react";
 import { currentFolderAtom, foldersAtom } from "./helpers/atoms";
 
-// This async function handles the API request to move the bookmark.
 const moveBookmarkFn = async (variables: { id: string; folderId: string }) => {
   const { id, folderId } = variables;
-  // This typically would be a PATCH request to update the bookmark's folderId.
   const response = await fetch(`/api/bookmarks/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -21,7 +19,6 @@ const moveBookmarkFn = async (variables: { id: string; folderId: string }) => {
   return response.json();
 };
 
-// Toggle pin status
 const togglePinFn = async (variables: { id: string; isPinned: boolean }) => {
   const response = await fetch(`/api/bookmarks/${variables.id}`, {
     method: "PATCH",
@@ -54,24 +51,18 @@ export const ContextMenuContent = ({
     (folder) => folder.id !== currentFolder?.id
   );
 
-  // TanStack Query's useMutation hook for the move operation.
   const { mutate: moveBookmark } = useMutation({
     mutationFn: moveBookmarkFn,
     onMutate: async ({ id: bookmarkId, folderId: destinationFolderId }) => {
       const sourceFolderId = currentFolder?.id;
       if (!sourceFolderId) return;
 
-      // The query key for the source folder's bookmarks.
       const queryKey = ["bookmarks", { folderId: sourceFolderId }];
 
-      // Cancel any outgoing refetches to prevent them from overwriting our optimistic update.
       await queryClient.cancelQueries({ queryKey });
 
-      // Snapshot the previous value.
       const previousData = queryClient.getQueryData(queryKey);
 
-      // Optimistically remove the bookmark from the source list in the cache.
-      // This works for both regular and infinite queries.
       queryClient.setQueryData(queryKey, (oldData: any) => {
         if (!oldData) return oldData;
         const newData = {
@@ -86,11 +77,9 @@ export const ContextMenuContent = ({
         return newData;
       });
 
-      // Return a context object with the snapshot and source folder ID.
       return { previousData, sourceFolderId };
     },
     onError: (err, variables, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back.
       if (context?.previousData && context.sourceFolderId) {
         queryClient.setQueryData(
           ["bookmarks", { folderId: context.sourceFolderId }],
@@ -100,17 +89,13 @@ export const ContextMenuContent = ({
       console.error("Failed to move bookmark:", err);
     },
     onSettled: () => {
-      // After the mutation is complete (success or error), invalidate ALL bookmark queries.
-      // This is the simplest way to ensure both the source and destination folders are refetched and up-to-date.
       queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
     },
   });
 
-  // Mutation for pin/unpin
   const { mutate: togglePin } = useMutation({
     mutationFn: togglePinFn,
     onSettled: () => {
-      // Refresh bookmark queries
       queryClient.invalidateQueries({ queryKey: ["pinnedBookmarks"] });
       queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
     },

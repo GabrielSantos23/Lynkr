@@ -9,7 +9,6 @@ import { itemVariants } from "../helpers/animationVariants";
 import { Spinner } from "../ui/Spinner";
 import TagDialog from "../TagDialog";
 
-// This async function handles the API request to rename the bookmark.
 const renameBookmarkFn = async (variables: { id: string; title: string }) => {
   const response = await fetch(`/api/bookmarks/${variables.id}`, {
     method: "PATCH",
@@ -28,7 +27,6 @@ export const ExpandedBookmark = ({
   onRemove,
   isPrivatePage,
 }: {
-  // Use the imported Bookmark type if available, otherwise define it.
   bookmark: Bookmark & { loading?: boolean; onClick?: () => void };
   onRemove?: (id: string) => void;
   isPrivatePage: boolean;
@@ -43,7 +41,6 @@ export const ExpandedBookmark = ({
   const [title, setTitle] = useState(bookmark.title);
   const [openTagDialog, setOpenTagDialog] = useState(false);
 
-  // Keep local title in sync with prop updates (avoid overwriting during edit)
   useEffect(() => {
     if (!isEditing) {
       setTitle(bookmark.title);
@@ -51,30 +48,26 @@ export const ExpandedBookmark = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookmark.title]);
 
-  // TanStack Query's useMutation hook for the rename operation.
   const { mutate: renameBookmark } = useMutation({
     mutationFn: renameBookmarkFn,
     onMutate: async (newData: { id: string; title: string }) => {
       setIsEditing(false);
       const previousTitle = title;
-      setTitle(newData.title); // Optimistically update the title
+      setTitle(newData.title);
       return { previousTitle };
     },
     onError: (err, variables, context) => {
-      // Roll back to the previous title on failure
       if (context?.previousTitle) {
         setTitle(context.previousTitle);
       }
       console.error("Failed to rename bookmark:", err);
     },
     onSuccess: () => {
-      // Invalidate queries to refetch fresh data
       queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
       queryClient.invalidateQueries({ queryKey: ["pinnedBookmarks"] });
     },
   });
 
-  // Toggle pin mutation
   const togglePinFn = async (variables: { id: string; isPinned: boolean }) => {
     const response = await fetch(`/api/bookmarks/${variables.id}`, {
       method: "PATCH",
@@ -94,9 +87,8 @@ export const ExpandedBookmark = ({
   });
 
   const handleRenameSubmit = () => {
-    // Prevent API call if title is empty or unchanged
     if (title.trim().length === 0 || title.trim() === bookmark.title) {
-      setTitle(bookmark.title); // Reset to original
+      setTitle(bookmark.title);
       setIsEditing(false);
       return;
     }
@@ -144,11 +136,10 @@ export const ExpandedBookmark = ({
             setIsEditing(true);
           }}
         >
-          <div className="relative flex items-center justify-between rounded-2xl p-3 align-middle transition-colors duration-200 ease-out hover:bg-black/5 dark:hover:bg-white/5">
-            <div className="flex w-full flex-row items-center gap-5 align-middle">
-              {/* OG Image / Loading / Fallback Display Logic (Unchanged) */}
+          <div className="relative flex items-center justify-between rounded-2xl p-2 sm:p-3 align-middle transition-colors duration-200 ease-out hover:bg-black/5 dark:hover:bg-white/5">
+            <div className="flex w-full flex-row items-center gap-3 sm:gap-5 align-middle">
               {bookmark.loading ? (
-                <div className="flex h-16 w-48 items-center justify-center rounded-lg bg-black/10 p-2 dark:bg-white/10">
+                <div className="flex h-12 w-32 sm:h-16 sm:w-48 items-center justify-center rounded-lg bg-black/10 p-2 dark:bg-white/10">
                   <Spinner size="md" />
                 </div>
               ) : bookmark.ogImageUrl && !imageError ? (
@@ -156,21 +147,21 @@ export const ExpandedBookmark = ({
                   animate={{ opacity: 1 }}
                   initial={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="hidden md:block"
+                  className="hidden sm:block"
                 >
                   <img
                     src={String(bookmark.ogImageUrl)}
                     alt={bookmark.title}
-                    width={192} // Adjusted for aspect ratio
+                    width={192}
                     height={108}
-                    className="h-16 w-48 rounded-md object-cover"
+                    className="h-12 w-32 sm:h-16 sm:w-48 rounded-md object-cover"
                     onError={() => setImageError(true)}
                   />
                 </motion.div>
               ) : (
-                <div className="hidden h-16 w-48 rounded-md bg-gradient-to-br from-[#e0e0e0] to-[#dad7d7] dark:from-[#1a1a1a] dark:to-[#2d2c2c] md:block" />
+                <div className="hidden h-12 w-32 sm:h-16 sm:w-48 rounded-md bg-gradient-to-br from-[#e0e0e0] to-[#dad7d7] dark:from-[#1a1a1a] dark:to-[#2d2c2c] sm:block" />
               )}
-              <div className="flex flex-col gap-2 sm:pl-2 md:pl-0">
+              <div className="flex flex-col gap-1 sm:gap-2 pl-0 sm:pl-2 md:pl-0">
                 {isEditing ? (
                   <form
                     className="w-full"
@@ -184,7 +175,7 @@ export const ExpandedBookmark = ({
                       ref={inputRef}
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="w-full bg-transparent text-lg font-medium text-black outline-none focus:outline-none dark:text-white"
+                      className="w-full bg-transparent text-base sm:text-lg font-medium text-black outline-none focus:outline-none dark:text-white"
                     />
                   </form>
                 ) : (
@@ -192,12 +183,12 @@ export const ExpandedBookmark = ({
                     animate={{ opacity: 1 }}
                     initial={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="max-w-[20rem] truncate text-lg font-medium text-black dark:text-white sm:max-w-[24rem] md:max-w-[24rem] lg:max-w-[30rem]"
+                    className="max-w-[15rem] truncate text-base sm:text-lg font-medium text-black dark:text-white sm:max-w-[24rem] md:max-w-[24rem] lg:max-w-[30rem]"
                   >
                     {title}
                   </motion.p>
                 )}
-                <div className="flex items-center gap-2 align-middle">
+                <div className="flex items-center gap-1 sm:gap-2 align-middle">
                   {bookmark.faviconUrl && !faviconError ? (
                     <img
                       src={bookmark.faviconUrl}
@@ -210,7 +201,7 @@ export const ExpandedBookmark = ({
                   ) : (
                     <div className="h-[14px] w-[14px] rounded-sm bg-gradient-to-br from-[#bdbdbd] to-[#ececec] dark:from-[#1a1a1a] dark:to-[#2d2c2c]" />
                   )}
-                  <p className="w-48 truncate text-sm text-muted-foreground sm:w-72 md:w-96 md:max-w-sm">
+                  <p className="w-32 sm:w-48 truncate text-xs sm:text-sm text-muted-foreground md:w-72 lg:w-96 lg:max-w-sm">
                     {bookmark.url}
                     {bookmark.tags &&
                       bookmark.tags.map((tag) => (
@@ -281,7 +272,6 @@ export const ExpandedBookmark = ({
           onOpenTagDialog={() => setOpenTagDialog(true)}
         />
       </ContextMenu.Portal>
-      {/* Tag editor dialog */}
       <TagDialog
         bookmark={bookmark}
         open={openTagDialog}

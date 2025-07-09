@@ -52,7 +52,6 @@ export const FolderDropdown = () => {
   );
   const { data: session } = authClient.useSession();
 
-  // This async function handles the API request to get all folders
   const getFoldersFn = async (): Promise<Folder[]> => {
     if (!session?.user?.id) {
       return [];
@@ -66,7 +65,6 @@ export const FolderDropdown = () => {
     }
 
     const raw = await response.json();
-    // Ensure createdAt is a Date instance to satisfy Folder type
     return raw.map((f: any) => ({
       ...f,
       createdAt: new Date(f.createdAt),
@@ -83,21 +81,16 @@ export const FolderDropdown = () => {
     enabled: !!session?.user?.id,
   });
 
-  // Sync TanStack Query data with Jotai atoms
   useEffect(() => {
     if (fetchedFolders) {
       console.log("Fetched folders:", fetchedFolders);
 
-      // 1. Update global folders list
       setFolders(fetchedFolders);
 
-      // 2. If no folder is selected OR the selected folder no longer exists, pick the first or load from localStorage
       if (fetchedFolders.length > 0) {
-        // Check if we have a saved folder ID in localStorage
         const savedFolderId = localStorage.getItem("currentFolderId");
         console.log("Saved folder ID from localStorage:", savedFolderId);
 
-        // Try to find the saved folder in the fetched folders
         const savedFolder = savedFolderId
           ? fetchedFolders.find((f) => f.id === savedFolderId)
           : null;
@@ -116,12 +109,10 @@ export const FolderDropdown = () => {
         );
 
         if (!currentExists) {
-          // If we have a saved folder and it exists in the fetched folders, use it
           if (savedFolder) {
             console.log("Setting current folder to saved folder:", savedFolder);
             setCurrentFolder(savedFolder);
 
-            // Update document title and favicon immediately
             document.title = savedFolder.name;
             const faviconUrl = getFaviconForFolder(savedFolder);
             const linkElement = document.querySelector('link[rel="icon"]');
@@ -129,7 +120,6 @@ export const FolderDropdown = () => {
               linkElement.setAttribute("href", faviconUrl);
             }
           } else {
-            // Otherwise, use the first folder
             console.log(
               "Setting current folder to first folder:",
               fetchedFolders[0]
@@ -137,7 +127,6 @@ export const FolderDropdown = () => {
             setCurrentFolder(fetchedFolders[0]);
             localStorage.setItem("currentFolderId", fetchedFolders[0].id);
 
-            // Update document title and favicon immediately
             document.title = fetchedFolders[0].name;
             const faviconUrl = getFaviconForFolder(fetchedFolders[0]);
             const linkElement = document.querySelector('link[rel="icon"]');
@@ -147,7 +136,6 @@ export const FolderDropdown = () => {
           }
         }
       } else {
-        // No folders at all – make sure state stays clean
         console.log("No folders available, clearing current folder");
         setCurrentFolder(null);
         localStorage.removeItem("currentFolderId");
@@ -155,15 +143,10 @@ export const FolderDropdown = () => {
     }
   }, [fetchedFolders, currentFolder, setFolders, setCurrentFolder]);
 
-  // NEW EFFECT: Persist the currently selected folder to localStorage and update
-  // document title & favicon whenever `currentFolder` changes. This guarantees
-  // that the last opened folder is remembered across sessions.
   useEffect(() => {
     if (currentFolder) {
-      // Save the currently open folder ID
       localStorage.setItem("currentFolderId", currentFolder.id);
 
-      // Update document title and favicon for immediate feedback
       document.title = currentFolder.name;
       const faviconUrl = getFaviconForFolder(currentFolder);
       const linkElement = document.querySelector('link[rel="icon"]');
@@ -171,7 +154,6 @@ export const FolderDropdown = () => {
         linkElement.setAttribute("href", faviconUrl);
       }
     } else {
-      // If no folder is selected, clean up the storage and revert UI elements
       localStorage.removeItem("currentFolderId");
       document.title = "Bookmarks";
       const linkElement = document.querySelector('link[rel="icon"]');
@@ -181,17 +163,14 @@ export const FolderDropdown = () => {
     }
   }, [currentFolder]);
 
-  // Ensure the dropdown is open while its tour step is active
   useEffect(() => {
     if (isActive && currentStepId === "folder-dropdown") {
       setSelectOpen(true);
     } else {
-      // Close when leaving the step or when the tour is inactive
       setSelectOpen(false);
     }
   }, [isActive, currentStepId, setSelectOpen]);
 
-  // Handle loading and error states
   if (isLoading) {
     return (
       <div className="flex h-[40px] items-center px-3 font-medium text-muted-foreground">
@@ -207,11 +186,6 @@ export const FolderDropdown = () => {
       </div>
     );
   }
-
-  // If there are no folders, don't render the dropdown
-  // if (!folders || folders.length === 0) {
-  //   return null;
-  // }
 
   return (
     <>
@@ -237,12 +211,10 @@ export const FolderDropdown = () => {
             setSelectOpen(false);
             setCurrentFolder(folder ?? null);
 
-            // Save current folder ID to localStorage for persistence
             if (folder) {
               console.log("Saving folder ID to localStorage:", folder.id);
               localStorage.setItem("currentFolderId", folder.id);
 
-              // Directly update document title and favicon for immediate feedback
               document.title = folder.name;
               const faviconUrl = getFaviconForFolder(folder);
               const linkElement = document.querySelector('link[rel="icon"]');
@@ -337,7 +309,6 @@ export const FolderDropdown = () => {
                   <Separator />
                 </div>
 
-                {/*CREATE FOLDER MODAL*/}
                 <Dialog.Root
                   open={isNewFolderModalOpen}
                   onOpenChange={(change) => {

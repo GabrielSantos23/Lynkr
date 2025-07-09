@@ -41,7 +41,6 @@ export default function DeleteFolder({
       return res.json();
     },
     onSuccess: () => {
-      // Refresh folders list + clear local bookmark cache
       queryClient.invalidateQueries({ queryKey: ["folders"] });
 
       setBookmarks(null);

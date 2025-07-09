@@ -22,7 +22,6 @@ export function useDocumentMeta({
   icon?: string;
 }) {
   useEffect(() => {
-    // Update document title if provided
     if (title) {
       const originalTitle = document.title;
       document.title = title;
@@ -33,7 +32,6 @@ export function useDocumentMeta({
   }, [title]);
 
   useEffect(() => {
-    // Update favicon if provided
     if (icon) {
       const linkElement = document.querySelector('link[rel="icon"]');
       if (linkElement) {

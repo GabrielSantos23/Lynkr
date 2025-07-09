@@ -69,13 +69,11 @@ export const ShareDropdown = () => {
       return res.json();
     },
     onSuccess: (updated) => {
-      // Refresh folders list and current folder
       queryClient.invalidateQueries({ queryKey: ["folders"] });
       setCurrentFolder(updated);
     },
   });
 
-  // This is a placeholder for the share link logic
   const shareUrl = currentFolder
     ? `${window.location.origin}/bookmarks/public/${currentFolder.id}`
     : window.location.href;
@@ -93,7 +91,6 @@ export const ShareDropdown = () => {
     setOpenHeaderPopover(null);
   };
 
-  // Automatically open share popover during its tour step
   useEffect(() => {
     if (isActive && currentStepId === "share-dropdown") {
       setOpenHeaderPopover("share");

@@ -10,13 +10,9 @@ async function encryptFolders() {
   const rows = await db.select().from(folder);
   for (const row of rows) {
     try {
-      // Attempt to decrypt to see if already encrypted
       await decrypt(row.name);
-      // If decrypt succeeds, this row is already encrypted; skip
       continue;
-    } catch {
-      // Not encrypted yet; proceed
-    }
+    } catch {}
 
     const encryptedName = await encrypt(row.name);
     const encryptedIcon = await encrypt(row.icon);
@@ -34,7 +30,7 @@ async function encryptBookmarks() {
   for (const row of rows) {
     try {
       await decrypt(row.url);
-      continue; // already encrypted
+      continue;
     } catch {}
 
     const updateData: any = {

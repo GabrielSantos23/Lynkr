@@ -48,18 +48,15 @@ function RootComponent() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [currentFolder] = useAtom(currentFolderAtom);
 
-  // Debug: Log currentFolder changes
   useEffect(() => {
     console.log("Current folder changed:", currentFolder);
   }, [currentFolder]);
 
-  // Update document title when currentFolder changes
   useEffect(() => {
     if (currentFolder?.name) {
       console.log("Setting document title to:", currentFolder.name);
       document.title = currentFolder.name;
 
-      // Use getFaviconForFolder to convert emoji to SVG data URL
       const faviconUrl = getFaviconForFolder(currentFolder);
       console.log("Setting favicon to:", faviconUrl);
 
@@ -68,7 +65,6 @@ function RootComponent() {
         linkElement.setAttribute("href", faviconUrl);
       }
     } else {
-      // Reset to default if no folder is selected
       document.title = "Bookmarks";
       const linkElement = document.querySelector('link[rel="icon"]');
       if (linkElement) {

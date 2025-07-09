@@ -24,7 +24,6 @@ export const useProfileHotkeys = () => {
   const [showMonths, setShowMonths] = useAtom(showMonthsAtom);
   const { theme, setTheme } = useTheme();
 
-  // Update folder mutation
   const updateFolder = useMutation({
     mutationFn: async (params: Partial<FolderUpdateParams>) => {
       if (!currentFolder) return null;
@@ -49,20 +48,17 @@ export const useProfileHotkeys = () => {
     },
     onSuccess: (updated) => {
       if (updated) {
-        // Refresh folders list and current folder
         queryClient.invalidateQueries({ queryKey: ["folders"] });
         setCurrentFolder(updated);
       }
     },
   });
 
-  // Function to toggle allow duplicates
   const handleUpdateFolder = () => {
     if (!currentFolder) return;
 
     const updatedDuplicate = !currentFolder.allowDuplicate;
 
-    // Update local state immediately for UI responsiveness
     const updatedFolder = {
       ...currentFolder,
       allowDuplicate: updatedDuplicate,
@@ -70,7 +66,6 @@ export const useProfileHotkeys = () => {
 
     setCurrentFolder(updatedFolder);
 
-    // Then update on the server
     updateFolder.mutate({
       id: String(currentFolder.id),
       allowDuplicate: updatedDuplicate,
@@ -80,27 +75,22 @@ export const useProfileHotkeys = () => {
     });
   };
 
-  // Function to toggle view style
   const handleChangeViewStyle = (newViewStyle: "compact" | "expanded") => {
     setViewStyle(newViewStyle);
     toast.success(`Switched to ${newViewStyle} view`);
   };
 
-  // Function to toggle show months
   const handleUpdateShowMonths = () => {
-    // Update state immediately for UI responsiveness
     setShowMonths(!showMonths);
     toast.success(`${!showMonths ? "Showing" : "Hiding"} months`);
   };
 
-  // Function to toggle theme
   const handleThemeToggle = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
     toast.success(`Switched to ${newTheme} mode`);
   };
 
-  // Register hotkeys
   useHotkeysHook(
     "d",
     () => {

@@ -38,18 +38,17 @@ import {
 import type { Bookmark } from "@/types/bookmark";
 import { SkeletonList } from "@/components/skeletons/SkeletonList";
 import { Index as BookmarksList } from "@/components/bookmarksList/BookmarksList";
-import { PinIcon } from "lucide-react";
+import { Diamond, PinIcon } from "lucide-react";
 import TourProvider, { TourStep, useTour } from "@/components/guided-tour";
 import CreateFirstFolder from "@/components/bookmark_components/CreateFirstFolder";
+import EmptyState from "@/components/EmptyState";
 
 export const Route = createFileRoute("/bookmarks")({
   component: RouteComponent,
   loader: () => {
-    // This loader ensures the component re-renders when navigating back to this route
     return {};
   },
   head: () => {
-    // Default values for initial page load
     return {
       meta: [
         {
@@ -96,7 +95,6 @@ const getBookmarksFn = async ({
     `/api/folders/${folderId}/bookmarks?${queryParams}`
   );
   if (!response.ok) throw new Error("Failed to fetch bookmarks.");
-  // Assume API returns { bookmarks: [], hasMore: boolean, totalElements: number }
   return response.json();
 };
 
@@ -121,7 +119,6 @@ const deleteBookmarkFn = async (bookmarkId: string) => {
   return response.json();
 };
 
-// Fetch pinned bookmarks for a folder
 const getPinnedBookmarksFn = async ({
   folderId,
   search = "",
@@ -137,7 +134,6 @@ const getPinnedBookmarksFn = async ({
   return response.json();
 };
 
-// Update bookmark (used for pin/unpin)
 const updateBookmarkFn = async (variables: {
   id: string;
   isPinned: boolean;
@@ -151,7 +147,6 @@ const updateBookmarkFn = async (variables: {
   return response.json();
 };
 
-// Helper functions
 const capitalizeFirstLetter = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
@@ -197,7 +192,6 @@ function RouteComponent() {
 
   useEffect(() => {
     if (!sessionPending && !session) {
-      // Allow unauthenticated access to public shared folders
       if (pathname.startsWith("/bookmarks/public/")) {
         return;
       }
@@ -205,7 +199,6 @@ function RouteComponent() {
     }
   }, [sessionPending, session, pathname, navigate]);
 
-  // Determine if we are on the public shared folder route. If so, render child route only.
   const isPublicRoute = pathname.startsWith("/bookmarks/public/");
 
   if (isPublicRoute) {
@@ -222,8 +215,6 @@ function RouteComponent() {
     if (fetchedFolders) {
       setFolders(fetchedFolders);
 
-      // Always try to restore the last-opened folder from localStorage.
-      // If it exists and differs from the current selection, update it.
       const savedFolderId = localStorage.getItem("currentFolderId");
       const savedFolder = savedFolderId
         ? fetchedFolders.find((f: any) => f.id === savedFolderId)
@@ -232,7 +223,6 @@ function RouteComponent() {
       if (savedFolder && savedFolder.id !== currentFolder?.id) {
         setCurrentFolder(savedFolder);
       } else if (!currentFolder) {
-        // If no folder is selected at all, fall back to the first one
         setCurrentFolder(fetchedFolders[0] ?? null);
       }
     }
@@ -252,7 +242,6 @@ function RouteComponent() {
     enabled: !!currentFolder && inputUrlDebounced.length > 0,
   });
 
-  // Use infinite query for paginated bookmarks
   const {
     data: infiniteBookmarksData,
     fetchNextPage,
@@ -278,7 +267,6 @@ function RouteComponent() {
       onMutate: async (newBookmark) => {
         setInputUrl("");
 
-        // Build a quick, readable title from the hostname so user sees something meaningful instantly
         const tempTitle = getWebsiteName(newBookmark.url);
 
         const optimisticBookmark: Bookmark = {
@@ -292,10 +280,8 @@ function RouteComponent() {
           createdAt: new Date(),
         };
 
-        // Update the directly-rendered list right away for snappier feedback
         setFilteredBookmarks((prev) => [optimisticBookmark, ...prev]);
 
-        // Immediately inject into cache for instant UI update
         queryClient.setQueryData(
           ["bookmarks", { folderId: currentFolder?.id }],
           (oldData: any) => {
@@ -309,21 +295,15 @@ function RouteComponent() {
           }
         );
 
-        // Cancel ongoing fetches *after* we've done the optimistic update so we don't delay UI
         void queryClient.cancelQueries({ queryKey: ["bookmarks"] });
 
         return { optimisticBookmark };
       },
       onSuccess: () => {
-        // Immediately refetch once (placeholder data becomes available fast)
         queryClient.invalidateQueries({
           queryKey: ["bookmarks", { folderId: currentFolder?.id }],
         });
 
-        // Schedule a secondary refetch a bit later so we pick up the
-        // enriched metadata pushed by the server in the background.
-        // (Microlink usually responds within ~1s, but we give it some
-        // extra buffer.)
         setTimeout(() => {
           queryClient.invalidateQueries({
             queryKey: ["bookmarks", { folderId: currentFolder?.id }],
@@ -331,7 +311,6 @@ function RouteComponent() {
         }, 3000);
       },
       onError: (err, newBookmark, context) => {
-        // Rollback on error
         queryClient.setQueryData(
           ["bookmarks", { folderId: currentFolder?.id }],
           (oldData: any) => {
@@ -345,7 +324,6 @@ function RouteComponent() {
       },
     });
 
-  // Mutation to delete a bookmark
   const { mutate: deleteBookmarkMutation } = useMutation({
     mutationFn: deleteBookmarkFn,
     onMutate: async (bookmarkId) => {
@@ -374,7 +352,6 @@ function RouteComponent() {
       return { previousData };
     },
     onError: (err, bookmarkId, context) => {
-      // Rollback on error
       if (context?.previousData) {
         queryClient.setQueryData(
           ["bookmarks", { folderId: currentFolder?.id }],
@@ -383,14 +360,12 @@ function RouteComponent() {
       }
     },
     onSettled: () => {
-      // Ensure consistency with the server
       queryClient.invalidateQueries({
         queryKey: ["bookmarks", { folderId: currentFolder?.id }],
       });
     },
   });
 
-  // Query for pinned bookmarks
   const { data: pinnedBookmarks = [], refetch: refetchPinned } = useQuery({
     queryKey: [
       "pinnedBookmarks",
@@ -404,11 +379,9 @@ function RouteComponent() {
     enabled: !!currentFolder,
   });
 
-  // Mutation to pin/unpin bookmark
   const { mutate: togglePinMutation } = useMutation({
     mutationFn: updateBookmarkFn,
     onSettled: () => {
-      // Refresh both pinned list and regular list
       queryClient.invalidateQueries({
         queryKey: ["pinnedBookmarks"],
       });
@@ -440,17 +413,14 @@ function RouteComponent() {
     (urlParam?: string) => {
       if (!currentFolder) return;
 
-      // Determine which URL we are attempting to add
       const finalUrl = urlParam ?? inputUrl;
 
-      // Prevent duplicates when the folder is configured to disallow them
       if (
         !currentFolder.allowDuplicate &&
         filteredBookmarks.some((bookmark) => bookmark.url === finalUrl)
       ) {
         setIsDuplicate(true);
 
-        // Reset duplicate feedback after a short delay so the user can try again
         setTimeout(() => {
           setIsDuplicate(false);
         }, 2000);
@@ -484,7 +454,6 @@ function RouteComponent() {
     }
   }, [currentFolder]);
 
-  // Effect: keyboard shortcut Ctrl/Cmd+F to focus input
   useEffect(() => {
     const keyHandler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
@@ -496,7 +465,6 @@ function RouteComponent() {
     return () => window.removeEventListener("keydown", keyHandler);
   }, []);
 
-  // Placeholder component shown only during its tour step
   const LinkPlaceholder: React.FC = () => {
     const { isActive, currentStepId } = useTour();
     const visible = isActive && currentStepId === "link-placeholder";
@@ -519,10 +487,8 @@ function RouteComponent() {
     );
   };
 
-  // Effect: global paste to add bookmark without focusing input
   useEffect(() => {
     const pasteHandler = (e: ClipboardEvent) => {
-      // ignore if active element is editable
       const active = document.activeElement as HTMLElement | null;
       if (
         active &&
@@ -545,10 +511,10 @@ function RouteComponent() {
 
   return (
     <TourProvider autoStart ranOnce={true} storageKey="lynkr-tour-completed">
-      <div className="p-8">
+      <div className="p-3 sm:p-5 md:p-8">
         <Header inputRef={inputRef} />
-        <div className="flex flex-col gap-4 items-center">
-          <div className="w-full  px-4 pb-32 sm:w-[40rem] md:w-[48rem] md:px-0 lg:w-[50rem]">
+        <div className="flex flex-col gap-2 sm:gap-4 items-center">
+          <div className="w-full px-1 sm:px-4 pb-20 sm:pb-32 sm:w-[40rem] md:w-[48rem] md:px-0 lg:w-[50rem]">
             <TourStep
               id="url-input"
               title="Add a new bookmark"
@@ -667,7 +633,6 @@ function RouteComponent() {
               <Separator />
             </div>
 
-            {/* Pinned bookmarks section (now below the input) */}
             {pinnedBookmarks && pinnedBookmarks.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -713,18 +678,19 @@ function RouteComponent() {
                 <CreateFirstFolder />
               )}
 
-              {/* {totalBookmarks === 0 &&
-                  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-                  ((bookmarks && bookmarks.length === 0) ||
-                    (filteredBookmarks && filteredBookmarks.length === 0)) &&
-                  fetchBookmarks.isFetched &&
-                  fetchFolders.isFetched &&
-                  !isDuplicate &&
-                  folders &&
-                  folders?.length > 0 &&
-                  (!fetchBookmarsWithSearch.isFetching ||
-                    inputUrl.length === 0) &&
-                  !addBookmark.isLoading && <EmptyState />} */}
+              {pinnedBookmarks &&
+                pinnedBookmarks.length === 0 &&
+                // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+                ((bookmarks && bookmarks.length === 0) ||
+                  (filteredBookmarks && filteredBookmarks.length === 0)) &&
+                foldersFetched &&
+                !isDuplicate &&
+                folders &&
+                folders?.length > 0 &&
+                (!isSearching || inputUrl.length === 0) &&
+                !isAddingBookmark && (
+                  <EmptyState title="Empty." icon={Diamond} description="" />
+                )}
             </motion.ul>
             <div className="flex justify-center pt-10 align-middle">
               {isFetchingNextPage &&
@@ -733,7 +699,6 @@ function RouteComponent() {
             </div>
           </div>
 
-          {/* Link placeholder for tour */}
           <LinkPlaceholder />
         </div>
       </div>

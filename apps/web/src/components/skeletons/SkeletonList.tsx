@@ -8,7 +8,7 @@ export const SkeletonList = ({
   viewStyle: "expanded" | "compact";
 }) => {
   return (
-    <div className="flex flex-col gap-6 px-2 pt-6">
+    <div className="flex flex-col gap-4 sm:gap-6 px-1 sm:px-2 pt-4 sm:pt-6">
       {[...Array<number>(3)].map((_, i) => (
         <motion.div
           key={i}
