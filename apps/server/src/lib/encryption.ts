@@ -140,13 +140,15 @@ export async function decrypt(ciphertextBase64: string): Promise<string> {
   }
 
   try {
-    // First, check if this might be plaintext already
-    if (looksLikePlaintext(ciphertextBase64)) {
+    // First, attempt to decode the input as base64. If decoding fails we
+    // assume the input is already plaintext and return it untouched.
+    let combined: Uint8Array;
+    try {
+      combined = base64ToUint8Array(ciphertextBase64);
+    } catch {
+      // Not valid base64 → treat as plaintext
       return ciphertextBase64;
     }
-
-    // Convert base64 to Uint8Array
-    const combined = base64ToUint8Array(ciphertextBase64);
 
     // Check if this is a new format with version marker
     if (combined.length > 0 && combined[0] === 0x01) {

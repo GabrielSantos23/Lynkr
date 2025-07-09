@@ -40,6 +40,7 @@ import { SkeletonList } from "@/components/skeletons/SkeletonList";
 import { Index as BookmarksList } from "@/components/bookmarksList/BookmarksList";
 import { PinIcon } from "lucide-react";
 import TourProvider, { TourStep, useTour } from "@/components/guided-tour";
+import CreateFirstFolder from "@/components/bookmark_components/CreateFirstFolder";
 
 export const Route = createFileRoute("/bookmarks")({
   component: RouteComponent,
@@ -595,7 +596,12 @@ function RouteComponent() {
                   id="url"
                   ref={inputRef}
                   value={isDuplicate ? "Duplicate" : inputUrl}
-                  disabled={isAddingBookmark || !currentFolder}
+                  disabled={
+                    isAddingBookmark ||
+                    !currentFolder ||
+                    !folders ||
+                    folders.length === 0
+                  }
                   onChange={(e) => setInputUrl(e.target.value)}
                   onPaste={(e) => {
                     const text = e.clipboardData.getData("text/plain");
@@ -630,7 +636,11 @@ function RouteComponent() {
 
                     handleCreateBookmark(text);
                   }}
-                  placeholder="https://... or ⌘F"
+                  placeholder={
+                    !folders || folders.length === 0
+                      ? "Create a folder first"
+                      : "https://... or ⌘F"
+                  }
                   className={`w-full rounded-lg border border-black/10 bg-black/10 px-4 py-2 font-normal text-black no-underline placeholder-zinc-600 transition duration-200 ease-in-out placeholder:font-normal hover:bg-black/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 
                       ${
                         isDuplicate
@@ -685,9 +695,9 @@ function RouteComponent() {
 
             <motion.ul>
               {filteredBookmarks.length === 0 &&
-                (isSearching || !infiniteBookmarksData) && (
-                  <SkeletonList viewStyle={viewStyle} />
-                )}
+                (isSearching || !infiniteBookmarksData) &&
+                folders &&
+                folders.length > 0 && <SkeletonList viewStyle={viewStyle} />}
 
               {filteredBookmarks.length > 0 && (
                 <BookmarksList
@@ -699,9 +709,9 @@ function RouteComponent() {
                 />
               )}
 
-              {/* {(!folders || folders.length === 0) &&
-                  fetchFolders.isFetched &&
-                  !fetchFolders.isFetching && <CreateFirstFolder />} */}
+              {(!folders || folders.length === 0) && foldersFetched && (
+                <CreateFirstFolder />
+              )}
 
               {/* {totalBookmarks === 0 &&
                   // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
