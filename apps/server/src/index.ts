@@ -1,19 +1,8 @@
-// Conditionally load dotenv only when running in a Node.js environment (not Cloudflare Workers)
-if (typeof process !== "undefined" && process?.versions?.node) {
-  // Dynamically import so that the bundle doesn't include Node-only code in edge runtimes.
+// Load dotenv only during local Node/Bun development. Cloudflare Workers
+// environment provides env vars via bindings and has a `navigator` object,
+// whereas Node/Bun does not.
+if (typeof navigator === "undefined") {
   await import("dotenv/config");
-}
-
-// Minimal polyfill for __dirname in runtimes (like Cloudflare) where it doesn't exist.
-// This is needed for some third-party CommonJS dependencies that expect it.
-// In Node ESM, __dirname is also not defined, so this won't overwrite anything there.
-if (typeof globalThis.__dirname === "undefined") {
-  Object.defineProperty(globalThis, "__dirname", {
-    value: "/",
-    writable: false,
-    enumerable: false,
-    configurable: false,
-  });
 }
 
 import { getAuth } from "./lib/auth";
@@ -71,5 +60,26 @@ app.route("/api/bookmarks", bookmarksRouter);
 app.get("/", (c) => {
   return c.text("OK");
 });
+
+// Ensure __dirname exists for libraries that expect it (Node commonjs pattern).
+if (typeof globalThis.__dirname === "undefined") {
+  // Derive a sensible default based on the current module URL if possible
+  try {
+    const dir = new URL(".", import.meta.url).pathname;
+    Object.defineProperty(globalThis, "__dirname", {
+      value: dir,
+      writable: false,
+      enumerable: false,
+      configurable: false,
+    });
+  } catch {
+    Object.defineProperty(globalThis, "__dirname", {
+      value: "/",
+      writable: false,
+      enumerable: false,
+      configurable: false,
+    });
+  }
+}
 
 export default app;
