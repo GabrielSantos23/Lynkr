@@ -4,5 +4,6 @@ compatibility_date = "2025-07-07"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-CORS_ORIGIN = "http://localhost:5173,https://lynkr-web.app,http://localhost:3001"
-BETTER_AUTH_URL = "https://db.zyven.online"
+CORS_ORIGIN = "*"
+BETTER_AUTH_URL = "https://zyvon-server.gabriel-gs605.workers.dev"
+COOKIE_DOMAIN = ""

@@ -32,10 +32,16 @@ app.use(
       return allowedOrigins[0] || "";
     },
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     credentials: true,
+    exposeHeaders: ["Set-Cookie"],
   })
 );
+
+// Add middleware to handle preflight OPTIONS requests
+app.options("*", (c) => {
+  return c.text("");
+});
 
 app.on(["POST", "GET"], "/api/auth/**", (c) => getAuth().handler(c.req.raw));
 

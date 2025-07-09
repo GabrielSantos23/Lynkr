@@ -9,13 +9,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       console.log("Default Lynkr folder stored");
     });
   }
-  return true; // Keep port alive for async
+  return true;
 });
 
-// Constant Lynkr backend URL – keep in sync with popup.js
-const SERVER_URL = "https://zyvon-server.gabriel-gs605.workers.dev";
-// URL of the Lynkr web app (used for OAuth sign-in). Update if hosted elsewhere.
-const WEB_URL = "https://your-lynkr-frontend.example.com";
+const SERVER_URL = "https://db.zyven.online";
+const WEB_URL = "https://lynkr-web.app";
 
 async function getAuthAndFolder() {
   return new Promise((resolve) => {
@@ -31,7 +29,6 @@ async function getAuthAndFolder() {
 async function saveBookmark(url, tabId) {
   const { token, folderId } = await getAuthAndFolder();
 
-  // Capture screenshot thumbnail
   const screenshotUrl = await new Promise((res) => {
     chrome.tabs.captureVisibleTab(
       null,
@@ -63,7 +60,6 @@ async function saveBookmark(url, tabId) {
       }
       if (!resp.ok) {
         if (resp.status === 401) {
-          // Clear invalid token
           chrome.storage.sync.remove("lynkrToken");
         }
         const { message } = await resp.json();
@@ -87,7 +83,6 @@ async function saveBookmark(url, tabId) {
     });
 }
 
-// Create context menu at install / update
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "save_to_lynkr",
@@ -110,14 +105,12 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
 });
 
-// Keyboard shortcut command
 chrome.commands.onCommand.addListener((command, tab) => {
   if (command === "save_page" && tab?.url) {
     saveBookmark(tab.url, tab.id);
   }
 });
 
-// Detect when user logs in via Lynkr web and extract token automatically
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   if (
     info.status === "complete" &&
@@ -133,7 +126,7 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
             chrome.runtime.sendMessage({ type: "SET_LYNKR_TOKEN", token });
           }
         } catch (e) {
-          // ignore cross-origin access errors
+          console.error(e);
         }
       },
     });

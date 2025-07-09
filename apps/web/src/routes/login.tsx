@@ -24,13 +24,15 @@ function LoginComponent() {
     }
   }, [session, navigate]);
 
+  const buildCallbackURL = () => `${window.location.origin}/bookmarks`;
+
   const handleGoogleSignIn = async () => {
     setLoadingProvider("google");
     try {
       await authClient.signIn.social(
         {
           provider: "google",
-          callbackURL: `${window.location.origin}/bookmarks`,
+          callbackURL: buildCallbackURL(),
         },
         {
           onSuccess: () => {
@@ -55,7 +57,7 @@ function LoginComponent() {
       await authClient.signIn.social(
         {
           provider: "github",
-          callbackURL: `${window.location.origin}/bookmarks`,
+          callbackURL: buildCallbackURL(),
         },
         {
           onSuccess: () => {

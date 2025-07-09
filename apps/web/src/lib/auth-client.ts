@@ -1,13 +1,36 @@
 import { createAuthClient } from "better-auth/react";
 
-// Resolve the Better-Auth backend URL:
-// 1. Prefer a compile-time environment variable (VITE_SERVER_URL)
-// 2. Otherwise, fall back to the current origin (works on Cloudflare Pages when the
-//    server is deployed under the same domain or via a Pages Function proxy)
-const resolvedBaseURL =
-  (import.meta.env.VITE_SERVER_URL as string | undefined) ??
-  (typeof window !== "undefined" ? window.location.origin : "");
+// Force all requests made by the auth client to include cookies so that
+// cross-site session cookies issued by the Better-Auth backend are sent.
+const withCredentials: typeof fetch = (input, init = {}) => {
+  // If the caller already specified credentials, respect it; otherwise include.
+  const mergedInit: RequestInit = {
+    credentials: "include",
+    ...init,
+    headers: {
+      ...init.headers,
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  };
+  return fetch(input, mergedInit);
+};
+
+// In both development and production we want the API to be served from the **same**
+// origin as the web application (the server will typically be mounted under the
+// same domain but behind a `/api` prefix or be proxied during local development).
+// Using `window.location.origin` ensures that Better-Auth requests are sent to the
+// current origin, keeping cookies and CORS simple.
+//
+// Note: `window` is always defined in the browser where this file executes. When
+// running server-side rendering (SSR) you may want to guard for `typeof window`,
+// but Lynkr currently renders purely on the client so this is safe.
+const serverURL = window.location.origin;
 
 export const authClient = createAuthClient({
-  baseURL: resolvedBaseURL,
+  baseURL: serverURL,
+  fetch: withCredentials,
+  cookieOptions: {
+    sameSite: "none",
+    secure: true,
+  },
 });

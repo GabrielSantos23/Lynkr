@@ -1,6 +1,3 @@
-// Better-T-Stack configuration file
-// safe to delete
-
 {
   "$schema": "https://better-t-stack.dev/schema.json",
   "version": "2.22.10",
@@ -9,12 +6,8 @@
   "orm": "drizzle",
   "backend": "hono",
   "runtime": "bun",
-  "frontend": [
-    "tanstack-router"
-  ],
-  "addons": [
-    "turborepo"
-  ],
+  "frontend": ["tanstack-router"],
+  "addons": ["turborepo"],
   "examples": [],
   "auth": true,
   "packageManager": "pnpm",

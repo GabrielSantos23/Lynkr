@@ -37,8 +37,8 @@ function HomeComponent() {
 
         {/* Subtitle */}
         <p className="text-muted-foreground text-sm mb-10 max-w-lg leading-relaxed">
-          A home for collecting and retrieving the most precious hyperlinks. You
-          should probably be using something else, though.
+          A home for collecting and retrieving the most precious hyperlinks. All
+          links are encrypted and stored in a secure database.
         </p>
 
         {/* About Section */}
