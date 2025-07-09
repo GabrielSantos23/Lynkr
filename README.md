@@ -1,9 +1,9 @@
-# Lynkr
+# Zyven
 
-Lynkr is a **modern, open-source bookmark manager** that helps you save, organize & **encrypt** your favourite links.
+Zyven is a **modern, open-source bookmark manager** that helps you save, organize & **encrypt** your favourite links.
 Build folders, add tags, pin items, use blazing-fast search and power-user hotkeys – all backed by PostgreSQL and an end-to-end typed TypeScript stack.
 
-Under the hood Lynkr runs on React + TanStack Router (frontend) and Hono (backend), with Drizzle ORM for type-safe SQL and libsodium for symmetric encryption.
+Under the hood Zyven runs on React + TanStack Router (frontend) and Hono (backend), with Drizzle ORM for type-safe SQL and libsodium for symmetric encryption.
 
 This repository was bootstrapped with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack).
 

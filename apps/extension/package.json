@@ -1,8 +1,8 @@
 {
-  "name": "lynkr-extension",
+  "name": "zyven-extension",
   "private": true,
   "version": "0.0.1",
-  "description": "Browser extension for Lynkr that lets you bookmark the current tab.",
+  "description": "Browser extension for Zyven that lets you bookmark the current tab.",
   "scripts": {
     "build": "echo 'No build needed for plain JS extension'"
   }

@@ -103,7 +103,7 @@ function LoginComponent() {
           />
         </div>
         <h1 className="text-foreground text-md font-normal mb-2 sm:mb-3 w-full max-w-xs sm:max-w-lg">
-          Sign in to Lynkr
+          Sign in to Zyven
         </h1>
 
         <p className="text-muted-foreground text-sm mb-6 sm:mb-10 max-w-xs sm:max-w-lg leading-relaxed">

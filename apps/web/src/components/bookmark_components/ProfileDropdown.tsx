@@ -26,6 +26,7 @@ import { Spinner } from "../ui/Spinner";
 import { useProfileHotkeys } from "./useHotkeys";
 import { useTheme } from "../theme-provider";
 import { useTour } from "../guided-tour";
+import { Skeleton } from "../ui/skeleton";
 
 export const ProfileDropdown = () => {
   const [signOutChecked, setSignOutChecked] = useState(false);
@@ -82,10 +83,9 @@ export const ProfileDropdown = () => {
                 width={24}
                 height={24}
                 className="rounded-full"
-                alt="Profile Picture"
               />
             ) : (
-              <div className="h-6 w-6 rounded-full  bg-black/20 dark:bg-white/20" />
+              <Skeleton className="h-6 w-6 rounded-full" />
             )}
           </div>
         </motion.button>

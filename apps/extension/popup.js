@@ -1,6 +1,6 @@
 (function () {
   const SERVER_URL = "https://zyvon-server.gabriel-gs605.workers.dev";
-  const WEB_URL = "https://your-lynkr-frontend.example.com";
+  const WEB_URL = "https://your-zyven-frontend.example.com";
   let currentTabUrl = "";
   let folders = [];
 
@@ -17,7 +17,7 @@
 
   async function loadFolders() {
     try {
-      const { lynkrToken } = await chrome.storage.sync.get(["lynkrToken"]);
+      const { lynkrToken } = await chrome.storage.sync.get(["lynkrToken"]); // Using legacy storage key
       const res = await fetch(`${SERVER_URL}/api/folders`, {
         headers: lynkrToken ? { Authorization: `Bearer ${lynkrToken}` } : {},
       });
@@ -32,12 +32,10 @@
         select.appendChild(option);
       });
 
-      // Store default when user changes drop-down
       select.addEventListener("change", (e) => {
         chrome.storage.sync.set({ lynkrDefaultFolder: select.value });
       });
 
-      // Preselect stored default
       const { lynkrDefaultFolder } = await chrome.storage.sync.get([
         "lynkrDefaultFolder",
       ]);
@@ -83,7 +81,6 @@
       return;
     }
     if (res.status === 401) {
-      // Invalid token
       chrome.storage.sync.remove("lynkrToken");
       switchTab("signin");
       document.getElementById("status").textContent = "Please sign in again.";
@@ -98,7 +95,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    // Tab switching
     document
       .getElementById("tab-save")
       .addEventListener("click", () => switchTab("save"));
@@ -106,7 +102,6 @@
       .getElementById("tab-signin")
       .addEventListener("click", () => switchTab("signin"));
 
-    // Get the active tab URL
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tab = tabs[0];
       if (!tab) {
@@ -118,10 +113,8 @@
       document.getElementById("status").textContent = currentTabUrl;
     });
 
-    // Load folders asynchronously (best-effort)
     loadFolders();
 
-    // Save bookmark button
     document.getElementById("add").addEventListener("click", () => {
       if (!currentTabUrl) return;
       saveBookmark().catch((err) => {
@@ -129,8 +122,6 @@
         document.getElementById("status").textContent = `Error: ${err.message}`;
       });
     });
-
-    // Store token button
 
     document.getElementById("loginGoogle").addEventListener("click", () => {
       chrome.tabs.create({ url: `${WEB_URL}/login?provider=google` });

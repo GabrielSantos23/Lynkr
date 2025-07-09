@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Lynkr Bookmark Extension",
-  "description": "Quickly bookmark the current tab using your Lynkr account.",
+  "name": "Zyven Bookmark Extension",
+  "description": "Quickly bookmark the current tab using your Zyven account.",
   "version": "0.0.1",
   "action": {
-    "default_title": "Add to Lynkr",
+    "default_title": "Add to Zyven",
     "default_popup": "popup.html"
   },
   "permissions": ["activeTab", "storage", "tabs", "contextMenus", "scripting"],
@@ -13,7 +13,7 @@
       "suggested_key": {
         "default": "Ctrl+Shift+L"
       },
-      "description": "Save current page to Lynkr"
+      "description": "Save current page to Zyven"
     }
   },
   "host_permissions": ["http://*/*", "https://*/*"],

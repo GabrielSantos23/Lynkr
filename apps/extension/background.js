@@ -1,19 +1,19 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "SET_LYNKR_TOKEN") {
     chrome.storage.sync.set({ lynkrToken: message.token }, () => {
-      console.log("Lynkr token stored");
+      console.log("Zyven token stored");
     });
   }
   if (message?.type === "SET_LYNKR_FOLDER") {
     chrome.storage.sync.set({ lynkrDefaultFolder: message.folderId }, () => {
-      console.log("Default Lynkr folder stored");
+      console.log("Default Zyven folder stored");
     });
   }
   return true;
 });
 
 const SERVER_URL = "https://db.zyven.online";
-const WEB_URL = "https://lynkr-web.app";
+const WEB_URL = "https://zyven-web.app";
 
 async function getAuthAndFolder() {
   return new Promise((resolve) => {
@@ -54,7 +54,7 @@ async function saveBookmark(url, tabId) {
           type: "basic",
           iconUrl: "logo.png",
           title: "Duplicate bookmark",
-          message: message || "Already exists in Lynkr",
+          message: message || "Already exists in Zyven",
         });
         return;
       }
@@ -74,7 +74,7 @@ async function saveBookmark(url, tabId) {
       chrome.notifications.create({
         type: "basic",
         iconUrl: "logo.png",
-        title: "Saved to Lynkr!",
+        title: "Saved to Zyven!",
         message: url,
       });
     })
@@ -86,12 +86,12 @@ async function saveBookmark(url, tabId) {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "save_to_lynkr",
-    title: "Add link to Lynkr",
+    title: "Add link to Zyven",
     contexts: ["link"],
   });
   chrome.contextMenus.create({
     id: "save_page_to_lynkr",
-    title: "Add page to Lynkr",
+    title: "Add page to Zyven",
     contexts: ["page"],
   });
 });

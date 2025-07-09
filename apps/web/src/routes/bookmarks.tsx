@@ -42,6 +42,7 @@ import { Diamond, PinIcon } from "lucide-react";
 import TourProvider, { TourStep, useTour } from "@/components/guided-tour";
 import CreateFirstFolder from "@/components/bookmark_components/CreateFirstFolder";
 import EmptyState from "@/components/EmptyState";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 
 export const Route = createFileRoute("/bookmarks")({
   component: RouteComponent,
@@ -510,7 +511,7 @@ function RouteComponent() {
   }, [isAddingBookmark, currentFolder, handleCreateBookmark]);
 
   return (
-    <TourProvider autoStart ranOnce={true} storageKey="lynkr-tour-completed">
+    <TourProvider autoStart ranOnce={true} storageKey="zyven-tour-completed">
       <div className="p-3 sm:p-5 md:p-8">
         <Header inputRef={inputRef} />
         <div className="flex flex-col gap-2 sm:gap-4 items-center">
@@ -701,6 +702,7 @@ function RouteComponent() {
 
           <LinkPlaceholder />
         </div>
+        <ScrollToTopButton position="bottom-right" showAfter={300} />
       </div>
     </TourProvider>
   );
