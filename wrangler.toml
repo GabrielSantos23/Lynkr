@@ -1,0 +1,13 @@
+name = "zyvon-server"
+main = "apps/server/dist/src/index.js"
+compatibility_date = "2025-07-09"
+compatibility_flags = ["nodejs_compat"]
+
+routes = [
+  { pattern = "zyven.online/api/*", zone_name = "zyven.online" }
+]
+
+[vars]
+CORS_ORIGIN = "https://zyven.online"
+BETTER_AUTH_URL = "https://zyven.online"
+COOKIE_DOMAIN = ".zyven.online" 
