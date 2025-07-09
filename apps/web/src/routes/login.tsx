@@ -13,14 +13,10 @@ function LoginComponent() {
   const navigate = useNavigate({ from: "/" });
   const { data: session, isPending } = authClient.useSession();
 
-  // Use separate loading states for each provider
   const [loadingProvider, setLoadingProvider] = useState<
     null | "google" | "github"
   >(null);
 
-  // Redirect authenticated users away from the login page **only** once the
-  // session query has finished and a valid user object is present. This avoids
-  // an early redirect caused by stale cache data or an empty session object.
   useEffect(() => {
     if (!isPending && session && (session as any)?.user) {
       navigate({ to: "/bookmarks" });
