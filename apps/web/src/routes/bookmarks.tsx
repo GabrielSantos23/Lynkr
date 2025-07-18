@@ -39,7 +39,7 @@ import type { Bookmark } from "@/types/bookmark";
 import { SkeletonList } from "@/components/skeletons/SkeletonList";
 import { Index as BookmarksList } from "@/components/bookmarksList/BookmarksList";
 import { Diamond, PinIcon } from "lucide-react";
-import TourProvider, { TourStep, useTour } from "@/components/guided-tour";
+
 import CreateFirstFolder from "@/components/bookmark_components/CreateFirstFolder";
 import EmptyState from "@/components/EmptyState";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
@@ -467,25 +467,7 @@ function RouteComponent() {
   }, []);
 
   const LinkPlaceholder: React.FC = () => {
-    const { isActive, currentStepId } = useTour();
-    const visible = isActive && currentStepId === "link-placeholder";
-    return (
-      <TourStep
-        id="link-placeholder"
-        title="Your bookmarks"
-        content="Saved bookmarks will appear here."
-        order={3}
-        position="top"
-      >
-        <div
-          className={`mt-4 w-full rounded-md border border-black/10 bg-black/5 p-4 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/5 ${
-            visible ? "opacity-100" : "opacity-0"
-          } transition-opacity duration-300`}
-        >
-          https://example.com — A sample bookmark card
-        </div>
-      </TourStep>
-    );
+    return null;
   };
 
   useEffect(() => {
@@ -511,18 +493,11 @@ function RouteComponent() {
   }, [isAddingBookmark, currentFolder, handleCreateBookmark]);
 
   return (
-    <TourProvider autoStart ranOnce={true} storageKey="zyven-tour-completed">
       <div className="p-3 sm:p-5 md:p-8">
         <Header inputRef={inputRef} />
         <div className="flex flex-col gap-2 sm:gap-4 items-center">
           <div className="w-full px-1 sm:px-4 pb-20 sm:pb-32 sm:w-[40rem] md:w-[48rem] md:px-0 lg:w-[50rem]">
-            <TourStep
-              id="url-input"
-              title="Add a new bookmark"
-              content="Paste or type a URL and press Enter to save it to your current folder."
-              order={2}
-              position="bottom"
-            >
+
               <motion.form
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -628,7 +603,7 @@ function RouteComponent() {
                     </motion.div>
                   )}
               </motion.form>
-            </TourStep>
+
 
             <div className={`mx-3 mt-6`}>
               <Separator />
@@ -704,6 +679,5 @@ function RouteComponent() {
         </div>
         <ScrollToTopButton position="bottom-right" showAfter={300} />
       </div>
-    </TourProvider>
   );
 }

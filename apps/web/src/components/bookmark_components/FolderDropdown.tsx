@@ -22,7 +22,7 @@ import CreateFolder from "./CreateFolder";
 import DeleteFolder from "./DeleteFolder";
 import { authClient } from "@/lib/auth-client";
 import { getFaviconForFolder } from "@/lib/utils";
-import { useTour } from "../guided-tour";
+
 
 type Folder = {
   id: string;
@@ -43,7 +43,7 @@ export const FolderDropdown = () => {
   const [, setBookmarks] = useAtom(bookmarksAtom);
   const [, setCurrentPage] = useAtom(currentPageAtom);
   const [selectOpen, setSelectOpen] = useAtom(folderDropdownOpenAtom);
-  const { isActive, currentStepId } = useTour();
+
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useAtom(
     isNewFolderModalOpenAtom
   );

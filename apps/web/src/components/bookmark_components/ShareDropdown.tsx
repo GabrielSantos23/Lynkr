@@ -25,7 +25,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTour } from "../guided-tour";
+
 
 const shareOptions = [
   {
@@ -49,7 +49,7 @@ export const ShareDropdown = () => {
   const [currentFolder, setCurrentFolder] = useAtom(currentFolderAtom);
   const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
-  const { isActive, currentStepId } = useTour();
+
 
   const { mutate: toggleShare, isPending } = useMutation({
     mutationFn: async (newValue: boolean) => {
@@ -91,13 +91,7 @@ export const ShareDropdown = () => {
     setOpenHeaderPopover(null);
   };
 
-  useEffect(() => {
-    if (isActive && currentStepId === "share-dropdown") {
-      setOpenHeaderPopover("share");
-    } else {
-      setOpenHeaderPopover(null);
-    }
-  }, [isActive, currentStepId, setOpenHeaderPopover]);
+
 
   return (
     <Popover.Root

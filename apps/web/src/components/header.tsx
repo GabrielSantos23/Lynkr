@@ -8,7 +8,6 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { FolderDropdown } from "./bookmark_components/FolderDropdown";
 import { ShareDropdown } from "./bookmark_components/ShareDropdown";
 import { ProfileDropdown } from "./bookmark_components/ProfileDropdown";
-import { TourStep } from "./guided-tour";
 
 import {
   bookmarksAtom,
@@ -127,34 +126,10 @@ export const Header = ({ inputRef }: { inputRef: InputRefType }) => {
         session?.user ? "" : "hidden"
       } flex-row items-center justify-between px-3 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6`}
     >
-      <TourStep
-        id="folder-dropdown"
-        title="Folders"
-        content="Switch between your bookmark folders here."
-        order={1}
-        position="bottom"
-      >
-        <FolderDropdown />
-      </TourStep>
+      <FolderDropdown />
       <div className="flex flex-row gap-1 sm:gap-2">
-        <TourStep
-          id="share-dropdown"
-          title="Share your folder"
-          content="Make a folder public or copy the magic link to share with friends."
-          order={4}
-          position="bottom"
-        >
-          <ShareDropdown />
-        </TourStep>
-        <TourStep
-          id="profile-dropdown"
-          title="Profile & settings"
-          content="Change layout, theme, and other settings or sign out."
-          order={5}
-          position="bottom"
-        >
-          <ProfileDropdown />
-        </TourStep>
+        <ShareDropdown />
+        <ProfileDropdown />
       </div>
     </motion.div>
   );
