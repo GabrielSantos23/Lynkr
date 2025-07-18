@@ -163,13 +163,7 @@ export const FolderDropdown = () => {
     }
   }, [currentFolder]);
 
-  useEffect(() => {
-    if (isActive && currentStepId === "folder-dropdown") {
-      setSelectOpen(true);
-    } else {
-      setSelectOpen(false);
-    }
-  }, [isActive, currentStepId, setSelectOpen]);
+  
 
   if (isLoading) {
     return (
