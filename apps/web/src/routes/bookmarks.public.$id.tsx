@@ -103,7 +103,7 @@ function PublicFolderComponent() {
       setBookmarks((prev) => {
         if (prev && currentPage > 1) {
           const newBookmarks = bookmarksQuery.data.bookmarks.filter(
-            (bookmark) => {
+            (bookmark: any) => {
               return !prev.find(
                 (prevBookmark) => prevBookmark.id === bookmark.id
               );
@@ -164,7 +164,6 @@ function PublicFolderComponent() {
 
   React.useEffect(() => {
     if (!bookmarksQuery.isLoading) {
-      console.log("Fetched public bookmarks", bookmarks);
     }
   }, [bookmarksQuery.isLoading, bookmarks]);
 

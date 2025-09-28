@@ -4,6 +4,7 @@ import type { RefObject } from "react";
 
 import { useAtom } from "jotai";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useNavigate } from "@tanstack/react-router";
 
 import { FolderDropdown } from "./bookmark_components/FolderDropdown";
 import { ShareDropdown } from "./bookmark_components/ShareDropdown";
@@ -32,6 +33,7 @@ export const Header = ({ inputRef }: { inputRef: InputRefType }) => {
   const [currentFolder, setCurrentFolder] = useAtom(currentFolderAtom);
   const [, setCurrentPage] = useAtom(currentPageAtom);
   const { data: session } = authClient.useSession();
+  const navigate = useNavigate();
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useAtom(
     isNewFolderModalOpenAtom
   );
@@ -95,6 +97,11 @@ export const Header = ({ inputRef }: { inputRef: InputRefType }) => {
           setFolderDropdownOpen(false);
           setCurrentFolder(folder);
           localStorage.setItem("currentFolderId", folder.id);
+
+          navigate({
+            to: "/bookmarks/$slug",
+            params: { slug: folder.slug },
+          });
 
           document.title = folder.name;
           const faviconUrl = getFaviconForFolder(folder);

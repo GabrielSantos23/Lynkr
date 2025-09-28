@@ -48,17 +48,13 @@ function RootComponent() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [currentFolder] = useAtom(currentFolderAtom);
 
-  useEffect(() => {
-    console.log("Current folder changed:", currentFolder);
-  }, [currentFolder]);
+  useEffect(() => {}, [currentFolder]);
 
   useEffect(() => {
     if (currentFolder?.name) {
-      console.log("Setting document title to:", currentFolder.name);
       document.title = currentFolder.name;
 
       const faviconUrl = getFaviconForFolder(currentFolder);
-      console.log("Setting favicon to:", faviconUrl);
 
       const linkElement = document.querySelector('link[rel="icon"]');
       if (linkElement) {
@@ -74,15 +70,14 @@ function RootComponent() {
   }, [currentFolder]);
 
   return (
-    <>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <HeadContent />
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <div className="grid grid-rows-[auto_1fr] h-svh">
-          {isFetching ? <Loader /> : <Outlet />}
-        </div>
-        <Toaster richColors />
-      </ThemeProvider>
+      <Header inputRef={inputRef} />
+      <div className="grid grid-rows-[auto_1fr] h-svh">
+        {isFetching ? <Loader /> : <Outlet />}
+      </div>
+      <Toaster richColors />
       <TanStackRouterDevtools position="bottom-left" />
-    </>
+    </ThemeProvider>
   );
 }

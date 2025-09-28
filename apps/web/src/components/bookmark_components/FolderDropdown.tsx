@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useAtom } from "jotai";
 import { CheckIcon, ChevronDownIcon, PlusIcon, Trash } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   bookmarksAtom,
   currentPageAtom,
@@ -22,15 +23,9 @@ import CreateFolder from "./CreateFolder";
 import DeleteFolder from "./DeleteFolder";
 import { authClient } from "@/lib/auth-client";
 import { getFaviconForFolder } from "@/lib/utils";
+import type { Folder } from "@/types/folder";
 
-
-type Folder = {
-  id: string;
-  name: string;
-  icon: string;
-  allowDuplicate: boolean;
-  isShared: boolean;
-  createdAt: Date;
+type FolderWithCount = Folder & {
   _count?: {
     bookmarks: number;
   };
@@ -43,6 +38,7 @@ export const FolderDropdown = () => {
   const [, setBookmarks] = useAtom(bookmarksAtom);
   const [, setCurrentPage] = useAtom(currentPageAtom);
   const [selectOpen, setSelectOpen] = useAtom(folderDropdownOpenAtom);
+  const navigate = useNavigate();
 
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useAtom(
     isNewFolderModalOpenAtom
@@ -52,7 +48,7 @@ export const FolderDropdown = () => {
   );
   const { data: session } = authClient.useSession();
 
-  const getFoldersFn = async (): Promise<Folder[]> => {
+  const getFoldersFn = async (): Promise<FolderWithCount[]> => {
     if (!session?.user?.id) {
       return [];
     }
@@ -68,7 +64,7 @@ export const FolderDropdown = () => {
     return raw.map((f: any) => ({
       ...f,
       createdAt: new Date(f.createdAt),
-    })) as Folder[];
+    })) as FolderWithCount[];
   };
 
   const {
@@ -83,34 +79,21 @@ export const FolderDropdown = () => {
 
   useEffect(() => {
     if (fetchedFolders) {
-      console.log("Fetched folders:", fetchedFolders);
-
       setFolders(fetchedFolders);
 
       if (fetchedFolders.length > 0) {
         const savedFolderId = localStorage.getItem("currentFolderId");
-        console.log("Saved folder ID from localStorage:", savedFolderId);
 
         const savedFolder = savedFolderId
           ? fetchedFolders.find((f) => f.id === savedFolderId)
           : null;
 
-        console.log("Found saved folder:", savedFolder);
-
         const currentExists = currentFolder
           ? fetchedFolders.some((f) => f.id === currentFolder.id)
           : false;
 
-        console.log(
-          "Current folder exists:",
-          currentExists,
-          "Current folder:",
-          currentFolder
-        );
-
         if (!currentExists) {
           if (savedFolder) {
-            console.log("Setting current folder to saved folder:", savedFolder);
             setCurrentFolder(savedFolder);
 
             document.title = savedFolder.name;
@@ -120,10 +103,6 @@ export const FolderDropdown = () => {
               linkElement.setAttribute("href", faviconUrl);
             }
           } else {
-            console.log(
-              "Setting current folder to first folder:",
-              fetchedFolders[0]
-            );
             setCurrentFolder(fetchedFolders[0]);
             localStorage.setItem("currentFolderId", fetchedFolders[0].id);
 
@@ -136,7 +115,6 @@ export const FolderDropdown = () => {
           }
         }
       } else {
-        console.log("No folders available, clearing current folder");
         setCurrentFolder(null);
         localStorage.removeItem("currentFolderId");
       }
@@ -163,8 +141,6 @@ export const FolderDropdown = () => {
     }
   }, [currentFolder]);
 
-  
-
   if (isLoading) {
     return (
       <div className="flex h-[40px] items-center px-3 font-medium text-muted-foreground">
@@ -188,17 +164,9 @@ export const FolderDropdown = () => {
         open={selectOpen}
         onOpenChange={setSelectOpen}
         onValueChange={(value) => {
-          console.log("Folder selected with value:", value);
           const folder = folders?.find((folder) => folder.id === value);
-          console.log("Found folder:", folder);
 
           if (folder?.id !== currentFolder?.id) {
-            console.log(
-              "Changing current folder from",
-              currentFolder,
-              "to",
-              folder
-            );
             setIsOpen(false);
             setBookmarks(null);
             setCurrentPage(1);
@@ -206,8 +174,13 @@ export const FolderDropdown = () => {
             setCurrentFolder(folder ?? null);
 
             if (folder) {
-              console.log("Saving folder ID to localStorage:", folder.id);
               localStorage.setItem("currentFolderId", folder.id);
+
+              // Navigate to the folder using slug
+              navigate({
+                to: "/bookmarks/$slug",
+                params: { slug: folder.slug },
+              });
 
               document.title = folder.name;
               const faviconUrl = getFaviconForFolder(folder);
@@ -216,7 +189,6 @@ export const FolderDropdown = () => {
                 linkElement.setAttribute("href", faviconUrl);
               }
             } else {
-              console.log("Removing folder ID from localStorage");
               localStorage.removeItem("currentFolderId");
               document.title = "Bookmarks";
               const linkElement = document.querySelector('link[rel="icon"]');
@@ -225,7 +197,6 @@ export const FolderDropdown = () => {
               }
             }
           } else {
-            console.log("Selected the same folder, not changing");
           }
         }}
       >

@@ -2,9 +2,16 @@ import { Hono } from "hono";
 import { getDb } from "../db";
 import { folder, bookmark } from "../db/schema/bookmarks";
 import { eq, ilike, and, desc, sql, or } from "drizzle-orm";
-import { encrypt, decrypt } from "../lib/encryption";
+import { decrypt } from "../lib/encryption";
 
 export const foldersRouter = new Hono();
+
+const slugify = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9\-]/g, "");
 
 foldersRouter.post("/", async (c) => {
   const db = getDb();
@@ -24,24 +31,20 @@ foldersRouter.post("/", async (c) => {
 
   const folderIcon = icon && icon.trim().length > 0 ? icon : "📁";
 
-  const encryptedName = await encrypt(name);
-  const encryptedIcon = await encrypt(folderIcon);
-
   const [newFolder] = await db
     .insert(folder)
     .values({
       id: crypto.randomUUID(),
-      name: encryptedName,
-      icon: encryptedIcon,
+      name: name,
+      slug: slugify(name),
+      icon: folderIcon,
       userId,
       isShared: false,
       allowDuplicate: true,
     })
     .returning();
 
-  const plainFolder = await decryptFolderRow(newFolder);
-
-  return c.json(plainFolder, 201);
+  return c.json(newFolder, 201);
 });
 
 foldersRouter.get("/:userId", async (c) => {
@@ -52,8 +55,7 @@ foldersRouter.get("/:userId", async (c) => {
     .from(folder)
     .where(eq(folder.userId, userId));
 
-  const decrypted = await Promise.all(result.map(decryptFolderRow));
-  return c.json(decrypted);
+  return c.json(result);
 });
 
 foldersRouter.get("/", async (c) => {
@@ -83,9 +85,7 @@ foldersRouter.get("/", async (c) => {
     _count: { bookmarks: Number(row.bookmarksCount) },
   }));
 
-  const decrypted = await Promise.all(mapped.map(decryptFolderRow));
-
-  return c.json(decrypted);
+  return c.json(mapped);
 });
 
 foldersRouter.delete("/:folderId", async (c) => {
@@ -109,6 +109,7 @@ foldersRouter.patch("/:folderId", async (c) => {
       icon: string;
       allowDuplicate: boolean;
       isShared: boolean;
+      slug: string;
     }>
   >();
 
@@ -120,22 +121,18 @@ foldersRouter.patch("/:folderId", async (c) => {
     return c.json({ message: "No values to update" }, 400);
   }
 
-  if (values.name !== undefined) {
-    values.name = await encrypt(values.name);
-  }
-  if (values.icon !== undefined) {
-    values.icon = await encrypt(values.icon);
+  const updateValues: any = { ...values };
+  if (values.name && !values.slug) {
+    updateValues.slug = slugify(values.name);
   }
 
   const [updated] = await db
     .update(folder)
-    .set(values)
+    .set(updateValues)
     .where(eq(folder.id, folderId))
     .returning();
 
-  const plainUpdated = await decryptFolderRow(updated);
-
-  return c.json(plainUpdated);
+  return c.json(updated);
 });
 
 foldersRouter.get("/:folderId/bookmarks", async (c) => {
@@ -226,14 +223,6 @@ foldersRouter.get("/:folderId/pinned", async (c) => {
 
   return c.json(decryptedPinned);
 });
-
-async function decryptFolderRow(row: any) {
-  return {
-    ...row,
-    name: await decrypt(row.name),
-    icon: await decrypt(row.icon),
-  };
-}
 
 async function decryptBookmarkRow(row: any) {
   return {

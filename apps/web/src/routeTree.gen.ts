@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as BookmarksRouteImport } from './routes/bookmarks'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BookmarksSlugRouteImport } from './routes/bookmarks.$slug'
 import { Route as BookmarksPublicIdRouteImport } from './routes/bookmarks.public.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookmarksSlugRoute = BookmarksSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BookmarksRoute,
+} as any)
 const BookmarksPublicIdRoute = BookmarksPublicIdRouteImport.update({
   id: '/public/$id',
   path: '/public/$id',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRouteWithChildren
   '/login': typeof LoginRoute
+  '/bookmarks/$slug': typeof BookmarksSlugRoute
   '/bookmarks/public/$id': typeof BookmarksPublicIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRouteWithChildren
   '/login': typeof LoginRoute
+  '/bookmarks/$slug': typeof BookmarksSlugRoute
   '/bookmarks/public/$id': typeof BookmarksPublicIdRoute
 }
 export interface FileRoutesById {
@@ -52,14 +60,31 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRouteWithChildren
   '/login': typeof LoginRoute
+  '/bookmarks/$slug': typeof BookmarksSlugRoute
   '/bookmarks/public/$id': typeof BookmarksPublicIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bookmarks' | '/login' | '/bookmarks/public/$id'
+  fullPaths:
+    | '/'
+    | '/bookmarks'
+    | '/login'
+    | '/bookmarks/$slug'
+    | '/bookmarks/public/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bookmarks' | '/login' | '/bookmarks/public/$id'
-  id: '__root__' | '/' | '/bookmarks' | '/login' | '/bookmarks/public/$id'
+  to:
+    | '/'
+    | '/bookmarks'
+    | '/login'
+    | '/bookmarks/$slug'
+    | '/bookmarks/public/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/bookmarks'
+    | '/login'
+    | '/bookmarks/$slug'
+    | '/bookmarks/public/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -91,6 +116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bookmarks/$slug': {
+      id: '/bookmarks/$slug'
+      path: '/$slug'
+      fullPath: '/bookmarks/$slug'
+      preLoaderRoute: typeof BookmarksSlugRouteImport
+      parentRoute: typeof BookmarksRoute
+    }
     '/bookmarks/public/$id': {
       id: '/bookmarks/public/$id'
       path: '/public/$id'
@@ -102,10 +134,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface BookmarksRouteChildren {
+  BookmarksSlugRoute: typeof BookmarksSlugRoute
   BookmarksPublicIdRoute: typeof BookmarksPublicIdRoute
 }
 
 const BookmarksRouteChildren: BookmarksRouteChildren = {
+  BookmarksSlugRoute: BookmarksSlugRoute,
   BookmarksPublicIdRoute: BookmarksPublicIdRoute,
 }
 

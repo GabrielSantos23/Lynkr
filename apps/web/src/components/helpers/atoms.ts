@@ -13,6 +13,7 @@ type SmallBookmark = {
 type FolderWithCount = {
   id: string;
   name: string;
+  slug: string;
   icon: string;
   allowDuplicate: boolean;
   isShared: boolean;

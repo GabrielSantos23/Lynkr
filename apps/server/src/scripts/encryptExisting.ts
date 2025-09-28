@@ -6,24 +6,7 @@ import { eq } from "drizzle-orm";
 
 const db = getDb();
 
-async function encryptFolders() {
-  const rows = await db.select().from(folder);
-  for (const row of rows) {
-    try {
-      await decrypt(row.name);
-      continue;
-    } catch {}
-
-    const encryptedName = await encrypt(row.name);
-    const encryptedIcon = await encrypt(row.icon);
-
-    await db
-      .update(folder)
-      .set({ name: encryptedName, icon: encryptedIcon })
-      .where(eq(folder.id, row.id));
-    console.log(`Encrypted folder ${row.id}`);
-  }
-}
+// Folder encryption removed - folders are now stored in plain text
 
 async function encryptBookmarks() {
   const rows = await db.select().from(bookmark);
@@ -49,13 +32,10 @@ async function encryptBookmarks() {
     }
 
     await db.update(bookmark).set(updateData).where(eq(bookmark.id, row.id));
-    console.log(`Encrypted bookmark ${row.id}`);
   }
 }
 
 (async () => {
-  await encryptFolders();
   await encryptBookmarks();
-  console.log("Encryption migration completed.");
   process.exit(0);
 })();

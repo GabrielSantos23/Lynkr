@@ -9,6 +9,7 @@ import { Button } from "../ui/button";
 import Loader from "../loader";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
+import { useNavigate } from "@tanstack/react-router";
 
 interface CreateFolderProps {
   onSuccess?: () => void;
@@ -20,6 +21,7 @@ export default function CreateFolder({ onSuccess }: CreateFolderProps) {
   const pickerRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState<string>("");
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: session } = authClient.useSession();
 
@@ -49,8 +51,11 @@ export default function CreateFolder({ onSuccess }: CreateFolderProps) {
 
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["folders"] });
+
+      const folderSlug = data.slug || data.id;
+      navigate({ to: `/bookmarks/${folderSlug}` });
 
       setName("");
       setIcon("");

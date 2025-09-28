@@ -14,6 +14,7 @@ export const folder = pgTable("folder", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   name: text("name").notNull(),
+  slug: text("slug").notNull(),
   icon: text("icon").notNull().default("📁"),
   allowDuplicate: boolean("allow_duplicate").notNull().default(true),
   isShared: boolean("is_shared").notNull().default(false),
