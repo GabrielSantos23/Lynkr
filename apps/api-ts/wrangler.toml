@@ -1,0 +1,12 @@
+name = "lynkr-api-ts"
+main = "dist/index.js"
+compatibility_date = "2025-01-09"
+compatibility_flags = ["nodejs_compat"]
+
+[[routes]]
+pattern = "api.zyven.online/*"
+zone_name = "zyven.online"
+
+[vars]
+CORS_ORIGIN = "https://zyven.online"
+COOKIE_DOMAIN = ".zyven.online"
