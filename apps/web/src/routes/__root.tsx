@@ -76,7 +76,7 @@ function RootComponent() {
       <div className="grid grid-rows-[auto_1fr] h-svh">
         {isFetching ? <Loader /> : <Outlet />}
       </div>
-      <Toaster richColors />
+      <Toaster position="bottom-center" />
       <TanStackRouterDevtools position="bottom-left" />
     </ThemeProvider>
   );
