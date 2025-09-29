@@ -20,7 +20,6 @@ from bookmark_service import (
     get_bookmark_by_id, create_bookmark
 )
 
-# Initialize FastAPI app
 app = FastAPI(title="Lynkr Extension API", version="1.0.0")
 
 # Security
