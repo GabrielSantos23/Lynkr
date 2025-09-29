@@ -12,7 +12,7 @@ async function init() {
 
   cryptoKey = await crypto.subtle.importKey(
     "raw",
-    keyData,
+    keyData as BufferSource,
     { name: "AES-GCM", length: 256 },
     false,
     ["encrypt", "decrypt"]
