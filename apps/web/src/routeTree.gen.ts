@@ -8,171 +8,171 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as LoginRouteImport } from "./routes/login";
-import { Route as BookmarksRouteImport } from "./routes/bookmarks";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as BookmarksSlugRouteImport } from "./routes/bookmarks.$slug";
-import { Route as BookmarksPublicIdRouteImport } from "./routes/bookmarks.public.$id";
-import { Route as ExtensionCallbackRouteImport } from "./routes/extension-callback";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ExtensionCallbackRouteImport } from './routes/extension-callback'
+import { Route as BookmarksRouteImport } from './routes/bookmarks'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as BookmarksSlugRouteImport } from './routes/bookmarks.$slug'
+import { Route as BookmarksPublicIdRouteImport } from './routes/bookmarks.public.$id'
 
 const LoginRoute = LoginRouteImport.update({
-  id: "/login",
-  path: "/login",
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ExtensionCallbackRoute = ExtensionCallbackRouteImport.update({
-  id: "/extension-callback",
-  path: "/extension-callback",
+  id: '/extension-callback',
+  path: '/extension-callback',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const BookmarksRoute = BookmarksRouteImport.update({
-  id: "/bookmarks",
-  path: "/bookmarks",
+  id: '/bookmarks',
+  path: '/bookmarks',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const BookmarksSlugRoute = BookmarksSlugRouteImport.update({
-  id: "/$slug",
-  path: "/$slug",
+  id: '/$slug',
+  path: '/$slug',
   getParentRoute: () => BookmarksRoute,
-} as any);
+} as any)
 const BookmarksPublicIdRoute = BookmarksPublicIdRouteImport.update({
-  id: "/public/$id",
-  path: "/public/$id",
+  id: '/public/$id',
+  path: '/public/$id',
   getParentRoute: () => BookmarksRoute,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/bookmarks": typeof BookmarksRouteWithChildren;
-  "/login": typeof LoginRoute;
-  "/extension-callback": typeof ExtensionCallbackRoute;
-  "/bookmarks/$slug": typeof BookmarksSlugRoute;
-  "/bookmarks/public/$id": typeof BookmarksPublicIdRoute;
+  '/': typeof IndexRoute
+  '/bookmarks': typeof BookmarksRouteWithChildren
+  '/extension-callback': typeof ExtensionCallbackRoute
+  '/login': typeof LoginRoute
+  '/bookmarks/$slug': typeof BookmarksSlugRoute
+  '/bookmarks/public/$id': typeof BookmarksPublicIdRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/bookmarks": typeof BookmarksRouteWithChildren;
-  "/login": typeof LoginRoute;
-  "/extension-callback": typeof ExtensionCallbackRoute;
-  "/bookmarks/$slug": typeof BookmarksSlugRoute;
-  "/bookmarks/public/$id": typeof BookmarksPublicIdRoute;
+  '/': typeof IndexRoute
+  '/bookmarks': typeof BookmarksRouteWithChildren
+  '/extension-callback': typeof ExtensionCallbackRoute
+  '/login': typeof LoginRoute
+  '/bookmarks/$slug': typeof BookmarksSlugRoute
+  '/bookmarks/public/$id': typeof BookmarksPublicIdRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/bookmarks": typeof BookmarksRouteWithChildren;
-  "/login": typeof LoginRoute;
-  "/extension-callback": typeof ExtensionCallbackRoute;
-  "/bookmarks/$slug": typeof BookmarksSlugRoute;
-  "/bookmarks/public/$id": typeof BookmarksPublicIdRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/bookmarks': typeof BookmarksRouteWithChildren
+  '/extension-callback': typeof ExtensionCallbackRoute
+  '/login': typeof LoginRoute
+  '/bookmarks/$slug': typeof BookmarksSlugRoute
+  '/bookmarks/public/$id': typeof BookmarksPublicIdRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/bookmarks"
-    | "/login"
-    | "/extension-callback"
-    | "/bookmarks/$slug"
-    | "/bookmarks/public/$id";
-  fileRoutesByTo: FileRoutesByTo;
+    | '/'
+    | '/bookmarks'
+    | '/extension-callback'
+    | '/login'
+    | '/bookmarks/$slug'
+    | '/bookmarks/public/$id'
+  fileRoutesByTo: FileRoutesByTo
   to:
-    | "/"
-    | "/bookmarks"
-    | "/login"
-    | "/extension-callback"
-    | "/bookmarks/$slug"
-    | "/bookmarks/public/$id";
+    | '/'
+    | '/bookmarks'
+    | '/extension-callback'
+    | '/login'
+    | '/bookmarks/$slug'
+    | '/bookmarks/public/$id'
   id:
-    | "__root__"
-    | "/"
-    | "/bookmarks"
-    | "/login"
-    | "/extension-callback"
-    | "/bookmarks/$slug"
-    | "/bookmarks/public/$id";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/bookmarks'
+    | '/extension-callback'
+    | '/login'
+    | '/bookmarks/$slug'
+    | '/bookmarks/public/$id'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  BookmarksRoute: typeof BookmarksRouteWithChildren;
-  LoginRoute: typeof LoginRoute;
-  ExtensionCallbackRoute: typeof ExtensionCallbackRoute;
+  IndexRoute: typeof IndexRoute
+  BookmarksRoute: typeof BookmarksRouteWithChildren
+  ExtensionCallbackRoute: typeof ExtensionCallbackRoute
+  LoginRoute: typeof LoginRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/login": {
-      id: "/login";
-      path: "/login";
-      fullPath: "/login";
-      preLoaderRoute: typeof LoginRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/extension-callback": {
-      id: "/extension-callback";
-      path: "/extension-callback";
-      fullPath: "/extension-callback";
-      preLoaderRoute: typeof ExtensionCallbackRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/bookmarks": {
-      id: "/bookmarks";
-      path: "/bookmarks";
-      fullPath: "/bookmarks";
-      preLoaderRoute: typeof BookmarksRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/bookmarks/$slug": {
-      id: "/bookmarks/$slug";
-      path: "/$slug";
-      fullPath: "/bookmarks/$slug";
-      preLoaderRoute: typeof BookmarksSlugRouteImport;
-      parentRoute: typeof BookmarksRoute;
-    };
-    "/bookmarks/public/$id": {
-      id: "/bookmarks/public/$id";
-      path: "/public/$id";
-      fullPath: "/bookmarks/public/$id";
-      preLoaderRoute: typeof BookmarksPublicIdRouteImport;
-      parentRoute: typeof BookmarksRoute;
-    };
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/extension-callback': {
+      id: '/extension-callback'
+      path: '/extension-callback'
+      fullPath: '/extension-callback'
+      preLoaderRoute: typeof ExtensionCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bookmarks': {
+      id: '/bookmarks'
+      path: '/bookmarks'
+      fullPath: '/bookmarks'
+      preLoaderRoute: typeof BookmarksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bookmarks/$slug': {
+      id: '/bookmarks/$slug'
+      path: '/$slug'
+      fullPath: '/bookmarks/$slug'
+      preLoaderRoute: typeof BookmarksSlugRouteImport
+      parentRoute: typeof BookmarksRoute
+    }
+    '/bookmarks/public/$id': {
+      id: '/bookmarks/public/$id'
+      path: '/public/$id'
+      fullPath: '/bookmarks/public/$id'
+      preLoaderRoute: typeof BookmarksPublicIdRouteImport
+      parentRoute: typeof BookmarksRoute
+    }
   }
 }
 
 interface BookmarksRouteChildren {
-  BookmarksSlugRoute: typeof BookmarksSlugRoute;
-  BookmarksPublicIdRoute: typeof BookmarksPublicIdRoute;
+  BookmarksSlugRoute: typeof BookmarksSlugRoute
+  BookmarksPublicIdRoute: typeof BookmarksPublicIdRoute
 }
 
 const BookmarksRouteChildren: BookmarksRouteChildren = {
   BookmarksSlugRoute: BookmarksSlugRoute,
   BookmarksPublicIdRoute: BookmarksPublicIdRoute,
-};
+}
 
 const BookmarksRouteWithChildren = BookmarksRoute._addFileChildren(
-  BookmarksRouteChildren
-);
+  BookmarksRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BookmarksRoute: BookmarksRouteWithChildren,
-  LoginRoute: LoginRoute,
   ExtensionCallbackRoute: ExtensionCallbackRoute,
-};
+  LoginRoute: LoginRoute,
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()

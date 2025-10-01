@@ -11,3 +11,13 @@ routes = [
 CORS_ORIGIN = "https://zyven.online"
 BETTER_AUTH_URL = "https://zyven.online"
 COOKIE_DOMAIN = ".zyven.online"
+WEB_URL = "https://zyven.online"
+
+# Note: Sensitive environment variables should be set using Cloudflare secrets:
+# wrangler secret put BETTER_AUTH_SECRET
+# wrangler secret put ENCRYPTION_KEY
+# wrangler secret put GOOGLE_CLIENT_ID
+# wrangler secret put GOOGLE_CLIENT_SECRET
+# wrangler secret put GITHUB_CLIENT_ID
+# wrangler secret put GITHUB_CLIENT_SECRET
+# wrangler secret put DATABASE_URL
