@@ -1,35 +1,74 @@
 # Lynkr Browser Extension
 
-This folder contains a minimal Manifest v3 browser extension that lets you quickly add the current tab to your Lynkr bookmarks.
+A modern bookmark manager built with React, TypeScript, and Tailwind CSS 4.0.
 
-## Getting started
+## Features
 
-1. Make sure your Lynkr server is up and running locally (update `SERVER_URL` in `popup.js` if it's hosted elsewhere).
-2. Open your browser's extensions page and enable _Developer mode_.
-   - **Chrome / Edge**: `chrome://extensions`
-   - **Firefox (Nightly)**: `about:debugging#/runtime/this-firefox`
-3. Click **Load unpacked** and select this `apps/extension` directory.
-4. Log in to Lynkr in a normal browser tab so you have a valid session token.
-5. In the browser console you can pass your auth token to the extension:
+- 🚀 Modern React 18 with TypeScript
+- 🎨 Tailwind CSS 4.0 for styling
+- 📱 Responsive popup interface
+- 🔖 Bookmark management with tags
+- 💾 Local storage persistence
+- 🎯 Auto-fill current page info
 
-```js
-chrome.runtime.sendMessage({
-  type: "SET_LYNKR_TOKEN",
-  token: localStorage.getItem("better-auth-session-token"),
-});
+## Development
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+### Setup
+
+1. Install dependencies:
+
+```bash
+npm install
 ```
 
-6. (Optional) Store a default folder ID for new bookmarks:
+2. Start development server:
 
-```js
-chrome.runtime.sendMessage({
-  type: "SET_LYNKR_FOLDER",
-  folderId: "<your-folder-id>",
-});
+```bash
+npm run dev
 ```
 
-7. Click the Lynkr icon in the toolbar, then **Save current page** to add a bookmark.
+3. Build for production:
 
----
+```bash
+npm run build
+```
 
-Feel free to evolve this extension (add React, TypeScript, OAuth flows, etc.) – this is only a starting point.
+### Loading the Extension
+
+1. Build the extension: `npm run build`
+2. Open Chrome/Edge and go to `chrome://extensions/`
+3. Enable "Developer mode"
+4. Click "Load unpacked" and select the `dist` folder
+
+## Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── Header.tsx
+│   ├── BookmarkList.tsx
+│   ├── BookmarkItem.tsx
+│   ├── AddBookmark.tsx
+│   └── EmptyState.tsx
+├── types/              # TypeScript type definitions
+│   └── bookmark.ts
+├── background.ts        # Extension background script
+├── content.ts          # Content script
+├── main.tsx           # React entry point
+├── App.tsx            # Main app component
+└── index.css          # Tailwind CSS imports
+```
+
+## Technologies Used
+
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Tailwind CSS 4.0** - Utility-first CSS
+- **Vite** - Build tool
+- **Chrome Extension API** - Browser extension functionality
+

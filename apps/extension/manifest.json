@@ -1,23 +1,39 @@
 {
   "manifest_version": 3,
-  "name": "Zyven Bookmark Extension",
-  "description": "Quickly bookmark the current tab using your Zyven account.",
-  "version": "0.0.1",
+  "name": "Lynkr Extension",
+  "version": "1.0.0",
+  "description": "A modern bookmark manager with React and Tailwind CSS",
+  "permissions": ["storage", "activeTab", "tabs"],
   "action": {
-    "default_title": "Add to Zyven",
-    "default_popup": "popup.html"
-  },
-  "permissions": ["activeTab", "storage", "tabs", "contextMenus", "scripting"],
-  "commands": {
-    "save_page": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+L"
-      },
-      "description": "Save current page to Zyven"
+    "default_popup": "popup.html",
+    "default_title": "Lynkr",
+    "default_icon": {
+      "16": "icons/LogoIcon.svg",
+      "32": "icons/LogoIcon.svg",
+      "48": "icons/LogoIcon.svg",
+      "128": "icons/LogoIcon.svg"
     }
   },
-  "host_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "icons": {
+    "16": "icons/LogoIcon.svg",
+    "32": "icons/LogoIcon.svg",
+    "48": "icons/LogoIcon.svg",
+    "128": "icons/LogoIcon.svg"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
+

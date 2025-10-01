@@ -17,13 +17,26 @@ function LoginComponent() {
     null | "google" | "github"
   >(null);
 
+  // Check if this is being opened by the extension
+  const isExtensionContext = window.opener && window.name === "ZyvenLogin";
+
   useEffect(() => {
     if (!isPending && session && (session as any)?.user) {
-      navigate({ to: "/bookmarks" });
+      if (isExtensionContext) {
+        // Redirect to extension callback page
+        navigate({ to: "/extension-callback" });
+      } else {
+        navigate({ to: "/bookmarks" });
+      }
     }
-  }, [session, isPending, navigate]);
+  }, [session, isPending, navigate, isExtensionContext]);
 
-  const buildCallbackURL = () => `${window.location.origin}/bookmarks`;
+  const buildCallbackURL = () => {
+    if (isExtensionContext) {
+      return `${window.location.origin}/extension-callback`;
+    }
+    return `${window.location.origin}/bookmarks`;
+  };
 
   const handleGoogleSignIn = async () => {
     setLoadingProvider("google");
@@ -35,8 +48,12 @@ function LoginComponent() {
         },
         {
           onSuccess: () => {
-            navigate({ to: "/bookmarks" });
-            toast.success("Signed in with Google successfully");
+            if (isExtensionContext) {
+              navigate({ to: "/extension-callback" });
+            } else {
+              navigate({ to: "/bookmarks" });
+              toast.success("Signed in with Google successfully");
+            }
           },
           onError: (error) => {
             toast.error(error.error.message || "Failed to sign in with Google");
@@ -60,8 +77,12 @@ function LoginComponent() {
         },
         {
           onSuccess: () => {
-            navigate({ to: "/bookmarks" });
-            toast.success("Signed in with GitHub successfully");
+            if (isExtensionContext) {
+              navigate({ to: "/extension-callback" });
+            } else {
+              navigate({ to: "/bookmarks" });
+              toast.success("Signed in with GitHub successfully");
+            }
           },
           onError: (error) => {
             toast.error(error.error.message || "Failed to sign in with GitHub");

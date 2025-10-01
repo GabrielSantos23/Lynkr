@@ -1,105 +1,13 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <title>Zyven</title>
-    <style>
-      body {
-        font-family: sans-serif;
-        margin: 0;
-        padding: 16px;
-        width: 260px;
-        background-color: #0d1117; /* dark background similar to app */
-        color: #e5e7eb; /* light foreground text */
-      }
-      #add {
-        background-color: #2d7bf6;
-        color: #fff;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        width: 100%;
-      }
-      #status {
-        margin-bottom: 12px;
-        font-size: 14px;
-      }
-      .tabs {
-        display: flex;
-        margin-bottom: 12px;
-      }
-      .tab {
-        flex: 1;
-        text-align: center;
-        padding: 6px;
-        cursor: pointer;
-        border-bottom: 2px solid transparent;
-        color: #8b949e;
-      }
-      .tab.active {
-        border-color: #2d7bf6;
-        font-weight: bold;
-        color: #e5e7eb;
-      }
-      select {
-        width: 100%;
-        margin-bottom: 8px;
-        padding: 6px;
-        background-color: #161b22;
-        color: #e5e7eb;
-        border: 1px solid #30363d;
-      }
-      #save-section,
-      .section {
-        display: none;
-      }
-      .section.active {
-        display: block;
-      }
-      #tokenInput {
-        width: 100%;
-        padding: 6px;
-        margin-bottom: 8px;
-      }
-      .auth-btn {
-        background-color: #2d7bf6;
-        color: #fff;
-        border: none;
-        padding: 8px 6px;
-        margin-bottom: 6px;
-        border-radius: 4px;
-        cursor: pointer;
-        width: 100%;
-      }
-      /* Button hover */
-      #add:hover,
-      .auth-btn:hover {
-        background-color: #4791ff;
-      }
-    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lynkr Extension</title>
   </head>
   <body>
-    <div class="tabs">
-      <div id="tab-save" class="tab active">Save</div>
-      <div id="tab-signin" class="tab">Sign&nbsp;in</div>
-    </div>
-
-    <div id="save-section" class="section active">
-      <p id="status">Preparing…</p>
-      <select id="folder-select"></select>
-      <button id="add">Save current page</button>
-    </div>
-
-    <div id="signin-section" class="section">
-      <button id="loginGoogle" class="auth-btn">Login with Google</button>
-      <button id="loginGithub" class="auth-btn">Login with GitHub</button>
-      <p style="font-size: 12px; color: #666; margin-top: 8px">
-        A browser tab will open; after you finish the OAuth flow the extension
-        will store your session automatically.
-      </p>
-    </div>
-
-    <script src="popup.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+
