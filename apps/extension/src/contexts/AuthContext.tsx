@@ -47,11 +47,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Listen for messages from login window
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== "https://www.zyven.online") {
+      console.log("Extension received message:", event);
+      console.log("Message origin:", event.origin);
+      console.log("Expected origin: https://zyven.online");
+
+      if (event.origin !== "https://zyven.online") {
+        console.log("Origin mismatch, ignoring message");
         return;
       }
 
       if (event.data.type === "AUTH_SUCCESS") {
+        console.log("Received AUTH_SUCCESS message:", event.data);
         const { user: userData, token: authToken } = event.data;
 
         // Store user and token
@@ -78,7 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Open login window
       const loginWindow = window.open(
-        "https://www.zyven.online/login",
+        "https://zyven.online/login",
         "ZyvenLogin",
         "width=500,height=700,scrollbars=yes,resizable=yes"
       );
