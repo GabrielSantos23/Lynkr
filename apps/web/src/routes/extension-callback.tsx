@@ -10,63 +10,84 @@ export const Route = createFileRoute("/extension-callback")({
 function ExtensionCallbackComponent() {
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { data: session, isPending } = authClient.useSession();
+
+  const isExtensionContext = window.opener && window.name === "ZyvenLogin";
+
+  const handleAuthCallback = async () => {
+    try {
+      const currentSession = await authClient.getSession();
+
+      if (!currentSession || !(currentSession as any)?.user) {
+        setError("No active session found");
+        setIsProcessing(false);
+        return;
+      }
+
+      const userData = {
+        id: (currentSession as any).user.id,
+        name: (currentSession as any).user.name || "",
+        email: (currentSession as any).user.email || "",
+        avatar: (currentSession as any).user.image || undefined,
+        provider: (currentSession as any).user.provider || "google",
+      };
+
+      const token =
+        (currentSession as any).token ||
+        (currentSession as any).accessToken ||
+        "mock-token";
+
+      const message = {
+        type: "AUTH_SUCCESS",
+        user: userData,
+        token: token,
+      };
+
+      console.log("Sending message to extension:", message);
+      console.log("Window opener:", window.opener);
+      console.log("Window opener closed:", window.opener?.closed);
+
+      // Try to send the message to the parent window (extension)
+      if (window.opener && !window.opener.closed) {
+        console.log("Sending message via window.opener.postMessage");
+        window.opener.postMessage(message, "*");
+        window.close();
+      } else {
+        console.log("Sending message via window.postMessage (fallback)");
+        window.postMessage(message, "*");
+
+        setTimeout(() => {
+          window.close();
+        }, 2000);
+      }
+    } catch (err) {
+      console.error("Extension callback error:", err);
+      setError("Failed to process authentication");
+      setIsProcessing(false);
+    }
+  };
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      try {
-        // Get the current session
-        const session = await authClient.getSession();
-
-        if (!session || !(session as any)?.user) {
-          setError("No active session found");
-          setIsProcessing(false);
-          return;
-        }
-
-        // Prepare user data for the extension
-        const userData = {
-          id: (session as any).user.id,
-          name: (session as any).user.name || "",
-          email: (session as any).user.email || "",
-          avatar: (session as any).user.image || undefined,
-          provider: (session as any).user.provider || "google", // Default to google if not specified
-        };
-
-        // Get the auth token (you may need to adjust this based on your auth implementation)
-        const token =
-          (session as any).token ||
-          (session as any).accessToken ||
-          "mock-token";
-
-        // Send message to the extension
-        const message = {
-          type: "AUTH_SUCCESS",
-          user: userData,
-          token: token,
-        };
-
-        // Try to send the message to the parent window (extension)
-        if (window.opener && !window.opener.closed) {
-          window.opener.postMessage(message, "*");
-          window.close();
-        } else {
-          // Fallback: try to communicate with the extension via postMessage
-          window.postMessage(message, "*");
-
-          // Show success message and close after a delay
-          setTimeout(() => {
-            window.close();
-          }, 2000);
-        }
-      } catch (err) {
-        console.error("Extension callback error:", err);
-        setError("Failed to process authentication");
+    if (!isPending) {
+      if (session) {
+        handleAuthCallback();
+      } else {
+        setError("No active session found. Please try logging in again.");
         setIsProcessing(false);
       }
-    };
+    }
+  }, [session, isPending]);
 
-    handleAuthCallback();
-  }, []);
+  useEffect(() => {
+    if (!isExtensionContext && !isPending && session) {
+      window.location.href = "/bookmarks";
+    }
+  }, [isExtensionContext, isPending, session]);
+
+  console.log("Extension callback - Session:", session);
+  console.log("Extension callback - Is extension context:", isExtensionContext);
+  console.log("Extension callback - Window opener:", window.opener);
+  console.log("Extension callback - Window name:", window.name);
 
   if (error) {
     return (
