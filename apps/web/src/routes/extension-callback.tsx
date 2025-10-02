@@ -12,14 +12,42 @@ function ExtensionCallbackComponent() {
   const [error, setError] = useState<string | null>(null);
   const { data: session, isPending } = authClient.useSession();
 
-  const isExtensionContext = window.opener && window.name === "ZyvenLogin";
+  const isExtensionContext =
+    window.opener && (window.name === "ZyvenLogin" || window.opener !== window);
 
   const handleAuthCallback = async () => {
     try {
-      const currentSession = await authClient.getSession();
+      // Try to get session if not available
+      let currentSession = session;
+      if (!currentSession || !(currentSession as any)?.user) {
+        console.log("Session not available, trying to get session...");
+        try {
+          const retrievedSession = await authClient.getSession();
+          console.log("Retrieved session:", retrievedSession);
+          // Use the retrieved session if it has user data
+          if (retrievedSession && (retrievedSession as any)?.user) {
+            currentSession = retrievedSession as any;
+          }
+        } catch (err) {
+          console.error("Failed to get session:", err);
+        }
+      }
 
       if (!currentSession || !(currentSession as any)?.user) {
-        setError("No active session found");
+        console.error("No session found after retry. Session:", currentSession);
+        console.error("Cookies available:", document.cookie);
+        console.error("Current domain:", document.domain);
+        console.error("Current URL:", window.location.href);
+        // If we're in extension context and no session, redirect to login
+        if (isExtensionContext) {
+          console.log(
+            "No session in extension context, redirecting to login..."
+          );
+          window.location.href = "/login";
+          return;
+        }
+
+        setError("No active session found. Please try logging in again.");
         setIsProcessing(false);
         return;
       }
@@ -69,8 +97,11 @@ function ExtensionCallbackComponent() {
 
   useEffect(() => {
     if (!isPending) {
-      if (session) {
-        handleAuthCallback();
+      if (session && (session as any)?.user) {
+        // Add a small delay to ensure session is fully loaded
+        setTimeout(() => {
+          handleAuthCallback();
+        }, 100);
       } else {
         setError("No active session found. Please try logging in again.");
         setIsProcessing(false);
@@ -85,9 +116,14 @@ function ExtensionCallbackComponent() {
   }, [isExtensionContext, isPending, session]);
 
   console.log("Extension callback - Session:", session);
+  console.log("Extension callback - Session user:", (session as any)?.user);
+  console.log("Extension callback - Is pending:", isPending);
   console.log("Extension callback - Is extension context:", isExtensionContext);
   console.log("Extension callback - Window opener:", window.opener);
   console.log("Extension callback - Window name:", window.name);
+  console.log("Extension callback - Current URL:", window.location.href);
+  console.log("Extension callback - Document domain:", document.domain);
+  console.log("Extension callback - Cookies:", document.cookie);
 
   if (error) {
     return (
